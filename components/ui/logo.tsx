@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import LogoImage from "./3.png"
+import LogoImage from "./image.jpeg"
 import Image from 'next/image';
 export default function Logo() {
   return (
@@ -16,7 +16,7 @@ export default function Logo() {
         <Image 
         src={LogoImage} // This works with Next.js Image component without .src
         alt="Logo" 
-        width={150} // Set appropriate dimensions
+        width={64} // Set appropriate dimensions
         height={32}
         priority // Loads the logo early
       />
