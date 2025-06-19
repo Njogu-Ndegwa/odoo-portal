@@ -2,7 +2,7 @@ import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 
 const httpLink = createHttpLink({
-  uri: "https://dev-federated-graphql-api.omnivoltaic.com/graphql",
+  uri: "https://federated-graphql-api.omnivoltaic.com/graphql",
 });
 
 const authLink = setContext((_, { headers }) => {
