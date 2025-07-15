@@ -1,27 +1,505 @@
+// 'use client'
+
+// export default function AnalyticsTab() {
+//   return (
+//     <div className="space-y-6">
+//       <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6">
+//         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+//           Analytics & Reports
+//         </h3>
+//         <div className="text-center py-12">
+//           <div className="text-gray-400 mb-4">
+//             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+//             </svg>
+//           </div>
+//           <h4 className="text-lg font-medium text-gray-800 dark:text-gray-100 mb-2">
+//             Analytics Coming Soon
+//           </h4>
+//           <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+//             This section will include performance analytics, usage trends, 
+//             historical reports, route optimization insights, and custom dashboards.
+//           </p>
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
+
+
 'use client'
 
+import { useState, useEffect } from 'react'
+import { BarChart3, TrendingUp, PieChart, Calendar, Download, Filter, ArrowUp, ArrowDown } from 'lucide-react'
+
+interface AnalyticsData {
+  fleetUtilization: {
+    labels: string[]
+    data: number[]
+  }
+  batteryHealth: {
+    excellent: number
+    good: number
+    fair: number
+    poor: number
+  }
+  routeEfficiency: {
+    avgDistance: number
+    avgSpeed: number
+    fuelSaved: number
+    co2Reduced: number
+  }
+  performanceTrends: {
+    period: string
+    health: number
+    utilization: number
+    efficiency: number
+  }[]
+}
+
 export default function AnalyticsTab() {
-  return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-          Analytics & Reports
-        </h3>
-        <div className="text-center py-12">
-          <div className="text-gray-400 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <h4 className="text-lg font-medium text-gray-800 dark:text-gray-100 mb-2">
-            Analytics Coming Soon
-          </h4>
-          <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-            This section will include performance analytics, usage trends, 
-            historical reports, route optimization insights, and custom dashboards.
-          </p>
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
+  const [selectedMetric, setSelectedMetric] = useState<'health' | 'utilization' | 'efficiency'>('health')
+
+  useEffect(() => {
+    fetchAnalyticsData()
+  }, [selectedPeriod])
+
+  const fetchAnalyticsData = async () => {
+    setLoading(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      setAnalyticsData({
+        fleetUtilization: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          data: [85, 92, 78, 88, 95, 72, 68]
+        },
+        batteryHealth: {
+          excellent: 67,
+          good: 23,
+          fair: 8,
+          poor: 2
+        },
+        routeEfficiency: {
+          avgDistance: 124.5,
+          avgSpeed: 28.3,
+          fuelSaved: 2340,
+          co2Reduced: 5.8
+        },
+        performanceTrends: [
+          { period: 'Week 1', health: 92, utilization: 85, efficiency: 88 },
+          { period: 'Week 2', health: 94, utilization: 87, efficiency: 91 },
+          { period: 'Week 3', health: 91, utilization: 92, efficiency: 89 },
+          { period: 'Week 4', health: 93, utilization: 89, efficiency: 93 }
+        ]
+      })
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 border-4 border-violet-200 border-t-violet-500 rounded-full animate-spin"></div>
+          <span className="text-gray-600 dark:text-gray-400 font-medium">Loading analytics...</span>
         </div>
       </div>
+    )
+  }
+
+  if (!analyticsData) {
+    return <div>Error loading analytics data</div>
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Analytics Header */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Fleet Analytics & Reports
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Comprehensive insights into fleet performance, efficiency, and health metrics
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex rounded-xl border border-gray-200 dark:border-gray-600 p-1">
+              {(['7d', '30d', '90d', '1y'] as const).map((period) => (
+                <button
+                  key={period}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    selectedPeriod === period
+                      ? 'bg-violet-500 text-white shadow-md'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                  }`}
+                >
+                  {period === '7d' ? '7 Days' : period === '30d' ? '30 Days' : period === '90d' ? '90 Days' : '1 Year'}
+                </button>
+              ))}
+            </div>
+            
+            <button className="flex items-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors duration-200">
+              <Download className="w-4 h-4" />
+              Export Report
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard
+          title="Average Distance"
+          value={`${analyticsData.routeEfficiency.avgDistance} km`}
+          subtitle="per route"
+          icon={<BarChart3 className="w-6 h-6" />}
+          trend={5.2}
+          color="blue"
+        />
+        <MetricCard
+          title="Average Speed"
+          value={`${analyticsData.routeEfficiency.avgSpeed} km/h`}
+          subtitle="fleet average"
+          icon={<TrendingUp className="w-6 h-6" />}
+          trend={-2.1}
+          color="green"
+        />
+        <MetricCard
+          title="Fuel Saved"
+          value={`${analyticsData.routeEfficiency.fuelSaved} L`}
+          subtitle="this month"
+          icon={<PieChart className="w-6 h-6" />}
+          trend={12.8}
+          color="purple"
+        />
+        <MetricCard
+          title="CO₂ Reduced"
+          value={`${analyticsData.routeEfficiency.co2Reduced} tons`}
+          subtitle="environmental impact"
+          icon={<Calendar className="w-6 h-6" />}
+          trend={8.5}
+          color="emerald"
+        />
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Fleet Utilization Chart */}
+        <div className="xl:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Fleet Utilization Trends
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Daily utilization percentage over time
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <select 
+                value={selectedMetric}
+                onChange={(e) => setSelectedMetric(e.target.value as any)}
+                className="text-sm border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="health">Fleet Health</option>
+                <option value="utilization">Utilization</option>
+                <option value="efficiency">Efficiency</option>
+              </select>
+            </div>
+          </div>
+          
+          <UtilizationChart 
+            data={analyticsData.fleetUtilization} 
+            metric={selectedMetric}
+            trends={analyticsData.performanceTrends}
+          />
+        </div>
+
+        {/* Battery Health Distribution */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Battery Health Distribution
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Current fleet battery status
+            </p>
+          </div>
+          
+          <BatteryHealthChart data={analyticsData.batteryHealth} />
+        </div>
+      </div>
+
+      {/* Performance Trends Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Performance Trends Summary
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Weekly performance metrics breakdown
+          </p>
+        </div>
+        
+        <PerformanceTable data={analyticsData.performanceTrends} />
+      </div>
+    </div>
+  )
+}
+
+// Metric Card Component
+interface MetricCardProps {
+  title: string
+  value: string
+  subtitle: string
+  icon: React.ReactNode
+  trend: number
+  color: 'blue' | 'green' | 'purple' | 'emerald'
+}
+
+function MetricCard({ title, value, subtitle, icon, trend, color }: MetricCardProps) {
+  const colorClasses = {
+    blue: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400',
+    green: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400',
+    purple: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400',
+    emerald: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400'
+  }
+
+  return (
+    <div className={`${colorClasses[color]} border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="p-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+          <div className={colorClasses[color].split(' ').slice(-2).join(' ')}>
+            {icon}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          {trend > 0 ? (
+            <ArrowUp className="w-4 h-4 text-green-500" />
+          ) : (
+            <ArrowDown className="w-4 h-4 text-red-500" />
+          )}
+          <span className={`text-sm font-medium ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {Math.abs(trend)}%
+          </span>
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          {title}
+        </div>
+        <div className={`text-3xl font-bold ${colorClasses[color].split(' ').slice(-2).join(' ')}`}>
+          {value}
+        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          {subtitle}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Utilization Chart Component
+function UtilizationChart({ data, metric, trends }: { 
+  data: AnalyticsData['fleetUtilization'], 
+  metric: string,
+  trends: AnalyticsData['performanceTrends']
+}) {
+  const maxValue = Math.max(...data.data)
+  
+  return (
+    <div className="space-y-4">
+      <div className="h-64 flex items-end justify-between gap-2">
+        {data.labels.map((label, index) => {
+          const height = (data.data[index] / maxValue) * 100
+          return (
+            <div key={label} className="flex-1 flex flex-col items-center gap-2">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden" style={{ height: '200px' }}>
+                <div 
+                  className="w-full bg-gradient-to-t from-violet-500 to-purple-400 rounded-t-lg transition-all duration-500"
+                  style={{ height: `${height}%`, marginTop: `${100 - height}%` }}
+                />
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                {label}
+              </div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                {data.data[index]}%
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-600 dark:text-gray-400">
+            Average: {(data.data.reduce((a, b) => a + b, 0) / data.data.length).toFixed(1)}%
+          </span>
+          <span className="text-gray-600 dark:text-gray-400">
+            Peak: {Math.max(...data.data)}%
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Battery Health Chart Component
+function BatteryHealthChart({ data }: { data: AnalyticsData['batteryHealth'] }) {
+  const total = Object.values(data).reduce((sum, value) => sum + value, 0)
+  
+  const segments = [
+    { label: 'Excellent', value: data.excellent, color: 'bg-green-500', percentage: (data.excellent / total) * 100 },
+    { label: 'Good', value: data.good, color: 'bg-blue-500', percentage: (data.good / total) * 100 },
+    { label: 'Fair', value: data.fair, color: 'bg-yellow-500', percentage: (data.fair / total) * 100 },
+    { label: 'Poor', value: data.poor, color: 'bg-red-500', percentage: (data.poor / total) * 100 }
+  ]
+
+  return (
+    <div className="space-y-6">
+      {/* Donut Chart Representation */}
+      <div className="relative w-48 h-48 mx-auto">
+        <div className="w-full h-full rounded-full bg-gray-200 dark:bg-gray-700 relative overflow-hidden">
+          {segments.map((segment, index) => {
+            const previousPercentages = segments.slice(0, index).reduce((sum, s) => sum + s.percentage, 0)
+            const rotation = (previousPercentages / 100) * 360
+            const segmentAngle = (segment.percentage / 100) * 360
+            
+            return (
+              <div
+                key={segment.label}
+                className={`absolute inset-0 ${segment.color} opacity-80`}
+                style={{
+                  clipPath: `polygon(50% 50%, 50% 0%, ${50 + 50 * Math.sin((segmentAngle * Math.PI) / 180)}% ${50 - 50 * Math.cos((segmentAngle * Math.PI) / 180)}%, 50% 50%)`,
+                  transform: `rotate(${rotation}deg)`,
+                  transformOrigin: 'center'
+                }}
+              />
+            )
+          })}
+          
+          {/* Center hole */}
+          <div className="absolute inset-6 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {total}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                Total Devices
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="space-y-3">
+        {segments.map((segment) => (
+          <div key={segment.label} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${segment.color}`} />
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {segment.label}
+              </span>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                {segment.value}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {segment.percentage.toFixed(1)}%
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Performance Table Component
+function PerformanceTable({ data }: { data: AnalyticsData['performanceTrends'] }) {
+  const getChangeIndicator = (current: number, previous: number) => {
+    if (!previous) return null
+    const change = current - previous
+    const percentage = (change / previous) * 100
+    
+    if (Math.abs(percentage) < 0.1) return null
+    
+    return (
+      <div className={`flex items-center gap-1 ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+        {change > 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+        <span className="text-xs">{Math.abs(percentage).toFixed(1)}%</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-gray-200 dark:border-gray-700">
+            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+              Period
+            </th>
+            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+              Fleet Health
+            </th>
+            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+              Utilization
+            </th>
+            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
+              Efficiency
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, index) => {
+            const previousRow = data[index - 1]
+            
+            return (
+              <tr key={row.period} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
+                  {row.period}
+                </td>
+                <td className="py-3 px-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-900 dark:text-white">{row.health}%</span>
+                    {getChangeIndicator(row.health, previousRow?.health)}
+                  </div>
+                </td>
+                <td className="py-3 px-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-900 dark:text-white">{row.utilization}%</span>
+                    {getChangeIndicator(row.utilization, previousRow?.utilization)}
+                  </div>
+                </td>
+                <td className="py-3 px-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-900 dark:text-white">{row.efficiency}%</span>
+                    {getChangeIndicator(row.efficiency, previousRow?.efficiency)}
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
