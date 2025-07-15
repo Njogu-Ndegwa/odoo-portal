@@ -1,0 +1,21 @@
+# Treat all files as binary by default (no line-ending conversion)
+* binary
+
+# Explicitly set text files to use LF line endings
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+
+# Explicitly mark image and binary files as binary
+*.png binary
+*.gif binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.webp binary

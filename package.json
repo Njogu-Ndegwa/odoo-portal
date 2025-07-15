@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "clean": "rm -rf node_modules package-lock.json .next",
     "build-types-account": "apollo client:codegen --target=typescript types --globalTypesFile=app/(default)/accounts/types/globalTypes.ts --config=apollo.config.account.js",
     "build-types-thing": "apollo client:codegen --target=typescript types --globalTypesFile=app/(default)/thing/types/globalTypes.ts --config=apollo.config.thing.js",
     "build-types-staff": "apollo client:codegen --target=typescript types --globalTypesFile=app/(default)/staff/types/globalTypes.ts --config=apollo.config.staff.js"
@@ -19,11 +20,12 @@
     "@types/node": "^22.13.0",
     "@types/react": "19.0.8",
     "@types/react-dom": "19.0.3",
+    "apollo": "^2.34.0",
     "chart.js": "^4.4.7",
     "chartjs-adapter-moment": "^1.0.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "graphql": "^16.10.0",
+    "graphql": "15.8.0",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
@@ -45,5 +47,8 @@
     "@types/lodash": "^4.17.16",
     "postcss": "^8.5.1",
     "tailwindcss": "^4.0.3"
+  },
+  "overrides": {
+    "graphql": "15.8.0"
   }
 }
