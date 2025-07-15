@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { BarChart3, TrendingUp, PieChart, Calendar, Download, Filter, ArrowUp, ArrowDown } from 'lucide-react'
 import Design2Table from '@/components/table/table2'
+import DoughnutChart from '@/components/charts/doughnut-chart'
 import { performanceTrendsColumns, PerformanceTrend } from './performanceTrendsColumns'
 
 interface AnalyticsData {
@@ -69,7 +70,7 @@ export default function AnalyticsTab() {
             changeType: 'increase',
             period: 'Week 1',
             category: 'Health',
-            updatedAt: new Date().toISOString()
+            updatedAt: '2024-01-15T10:00:00.000Z'
           },
           {
             id: 'trend_002',
@@ -80,7 +81,7 @@ export default function AnalyticsTab() {
             changeType: 'increase',
             period: 'Week 2',
             category: 'Efficiency',
-            updatedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString()
+            updatedAt: '2024-01-15T09:30:00.000Z'
           },
           {
             id: 'trend_003',
@@ -91,7 +92,7 @@ export default function AnalyticsTab() {
             changeType: 'decrease',
             period: 'Week 3',
             category: 'Performance',
-            updatedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString()
+            updatedAt: '2024-01-15T09:00:00.000Z'
           },
           {
             id: 'trend_004',
@@ -102,7 +103,7 @@ export default function AnalyticsTab() {
             changeType: 'increase',
             period: 'Week 4',
             category: 'Health',
-            updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
+            updatedAt: '2024-01-15T08:00:00.000Z'
           }
         ]
       })
@@ -380,45 +381,37 @@ function UtilizationChart({ data, metric, trends }: {
 function BatteryHealthChart({ data }: { data: AnalyticsData['batteryHealth'] }) {
   const total = Object.values(data).reduce((sum, value) => sum + value, 0)
   
-  const segments = [
-    { label: 'Excellent', value: data.excellent, color: 'bg-green-500', percentage: (data.excellent / total) * 100 },
-    { label: 'Good', value: data.good, color: 'bg-blue-500', percentage: (data.good / total) * 100 },
-    { label: 'Fair', value: data.fair, color: 'bg-yellow-500', percentage: (data.fair / total) * 100 },
-    { label: 'Poor', value: data.poor, color: 'bg-red-500', percentage: (data.poor / total) * 100 }
-  ]
+  // Prepare data for Chart.js DoughnutChart
+  const chartData = {
+    labels: ['Excellent', 'Good', 'Fair', 'Poor'],
+    datasets: [
+      {
+        data: [data.excellent, data.good, data.fair, data.poor],
+        backgroundColor: [
+          '#10b981', // green-500
+          '#3b82f6', // blue-500  
+          '#eab308', // yellow-500
+          '#ef4444'  // red-500
+        ],
+        borderWidth: 0,
+        cutout: '80%'
+      }
+    ]
+  }
 
   return (
     <div className="space-y-6">
-      {/* Donut Chart Representation */}
+      {/* Chart.js Doughnut Chart with Center Text */}
       <div className="relative w-48 h-48 mx-auto">
-        <div className="w-full h-full rounded-full bg-gray-200 dark:bg-gray-700 relative overflow-hidden">
-          {segments.map((segment, index) => {
-            const previousPercentages = segments.slice(0, index).reduce((sum, s) => sum + s.percentage, 0)
-            const rotation = (previousPercentages / 100) * 360
-            const segmentAngle = (segment.percentage / 100) * 360
-            
-            return (
-              <div
-                key={segment.label}
-                className={`absolute inset-0 ${segment.color} opacity-80`}
-                style={{
-                  clipPath: `polygon(50% 50%, 50% 0%, ${50 + 50 * Math.sin((segmentAngle * Math.PI) / 180)}% ${50 - 50 * Math.cos((segmentAngle * Math.PI) / 180)}%, 50% 50%)`,
-                  transform: `rotate(${rotation}deg)`,
-                  transformOrigin: 'center'
-                }}
-              />
-            )
-          })}
-          
-          {/* Center hole */}
-          <div className="absolute inset-6 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {total}
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                Total Devices
-              </div>
+        <DoughnutChart data={chartData} width={192} height={192} />
+        {/* Center text overlay - positioned over the chart canvas */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+              {total}
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">
+              Total Devices
             </div>
           </div>
         </div>
@@ -426,24 +419,32 @@ function BatteryHealthChart({ data }: { data: AnalyticsData['batteryHealth'] }) 
 
       {/* Legend */}
       <div className="space-y-3">
-        {segments.map((segment) => (
-          <div key={segment.label} className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${segment.color}`} />
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {segment.label}
-              </span>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                {segment.value}
+        {[
+          { label: 'Excellent', value: data.excellent, color: 'bg-green-500' },
+          { label: 'Good', value: data.good, color: 'bg-blue-500' },
+          { label: 'Fair', value: data.fair, color: 'bg-yellow-500' },
+          { label: 'Poor', value: data.poor, color: 'bg-red-500' }
+        ].map((segment) => {
+          const percentage = (segment.value / total) * 100
+          return (
+            <div key={segment.label} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${segment.color}`} />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  {segment.label}
+                </span>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {segment.percentage.toFixed(1)}%
+              <div className="text-right">
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {segment.value}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {percentage.toFixed(1)}%
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
