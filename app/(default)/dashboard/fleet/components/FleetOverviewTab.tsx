@@ -128,8 +128,8 @@ export default function FleetOverviewTab() {
             healthScore={fleet.healthScore}
             deviceCount={fleet.deviceCount}
             reportingDevices={fleet.reportingDevices}
-            trendData={generateMockTrendData()}
-            changePercent={Math.random() * 10 - 5} // Mock change percentage
+            trendData={generateMockTrendData(index)}
+            changePercent={generateMockChangePercent(index)}
           />
         ))}
       </div>
@@ -137,16 +137,24 @@ export default function FleetOverviewTab() {
   )
 }
 
-// Helper function to generate mock trend data
-function generateMockTrendData(): number[] {
+// Helper function to generate mock trend data with consistent seed
+function generateMockTrendData(seed: number): number[] {
   const data = []
-  let value = 85 + Math.random() * 10
+  let value = 85 + (seed * 3.7) % 10 // Deterministic starting value
   
   for (let i = 0; i < 26; i++) {
-    value += (Math.random() - 0.5) * 5
+    // Use deterministic pseudo-random based on seed and index
+    const pseudoRandom = ((seed * 17 + i * 23) % 100) / 100 - 0.5
+    value += pseudoRandom * 5
     value = Math.max(70, Math.min(100, value))
     data.push(Math.round(value))
   }
   
   return data
+}
+
+// Helper function to generate mock change percentage with consistent seed
+function generateMockChangePercent(seed: number): number {
+  // Deterministic change percentage based on seed
+  return ((seed * 13.7) % 20) - 10 // Range: -10 to +10
 }

@@ -12,21 +12,32 @@ interface FleetHealthData {
 }
 
 interface FleetHealthCardProps {
-  healthData: FleetHealthData
+  fleetName: string
+  healthScore: number
+  deviceCount: number
+  reportingDevices: number
+  trendData: number[]
+  changePercent: number
 }
 
-export default function FleetHealthCard({ healthData }: FleetHealthCardProps) {
-  // Generate mock time series data for the last 30 days
+export default function FleetHealthCard({
+  fleetName,
+  healthScore,
+  deviceCount,
+  reportingDevices,
+  trendData,
+  changePercent
+}: FleetHealthCardProps) {
+  // Generate deterministic time series data for the last 30 days
   const generateHealthTrendData = () => {
     const data = []
     const now = new Date()
     
     for (let i = 29; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-      // Simulate health score fluctuation around current score
-      const baseScore = healthData.currentScore
-      const variation = (Math.random() - 0.5) * 20 // ±10 points variation
-      const score = Math.max(0, Math.min(100, baseScore + variation))
+      // Use provided trend data instead of random
+      const dataIndex = Math.min(i, trendData.length - 1)
+      const score = trendData[dataIndex] || healthScore
       
       data.push({
         x: date.toISOString().split('T')[0],
@@ -73,39 +84,37 @@ export default function FleetHealthCard({ healthData }: FleetHealthCardProps) {
   }
 
   const getTrendIcon = () => {
-    switch (healthData.trend) {
-      case 'up':
-        return (
-          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-          </svg>
-        )
-      case 'down':
-        return (
-          <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-        )
-      default:
-        return (
-          <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-          </svg>
-        )
+    if (changePercent > 0) {
+      return (
+        <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+        </svg>
+      )
+    } else if (changePercent < 0) {
+      return (
+        <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      )
+    } else {
+      return (
+        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+        </svg>
+      )
     }
   }
 
-  const scoreChange = healthData.currentScore - healthData.previousScore
-  const changePercentage = healthData.previousScore > 0 
-    ? Math.abs((scoreChange / healthData.previousScore) * 100) 
-    : 0
+  const previousScore = healthScore - changePercent
+  const scoreChange = changePercent
+  const changePercentage = Math.abs(changePercent)
 
   return (
     <div className="flex flex-col col-span-full sm:col-span-6 xl:col-span-1 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
       <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
-        <h2 className="font-semibold text-gray-800 dark:text-gray-100">Fleet Health Score</h2>
+        <h2 className="font-semibold text-gray-800 dark:text-gray-100">{fleetName}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Overall fleet performance and status
+          {reportingDevices}/{deviceCount} devices reporting
         </p>
       </header>
 
@@ -113,11 +122,11 @@ export default function FleetHealthCard({ healthData }: FleetHealthCardProps) {
       <div className="px-5 py-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className={`text-3xl font-bold ${getHealthColor(healthData.currentScore)}`}>
-              {healthData.currentScore}
+            <div className={`text-3xl font-bold ${getHealthColor(healthScore)}`}>
+              {healthScore}%
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              {getHealthStatus(healthData.currentScore)}
+              {getHealthStatus(healthScore)}
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -127,27 +136,27 @@ export default function FleetHealthCard({ healthData }: FleetHealthCardProps) {
               scoreChange < 0 ? 'text-red-600 dark:text-red-400' :
               'text-gray-600 dark:text-gray-400'
             }`}>
-              {scoreChange > 0 ? '+' : ''}{scoreChange} ({changePercentage.toFixed(1)}%)
+              {scoreChange > 0 ? '+' : ''}{scoreChange.toFixed(1)}%
             </span>
           </div>
         </div>
 
-        {/* Issues Summary */}
+        {/* Device Summary */}
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
-            <div className="text-red-600 dark:text-red-400 text-lg font-semibold">
-              {healthData.criticalIssues}
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+            <div className="text-green-600 dark:text-green-400 text-lg font-semibold">
+              {reportingDevices}
             </div>
-            <div className="text-red-600 dark:text-red-400 text-xs">
-              Critical Issues
+            <div className="text-green-600 dark:text-green-400 text-xs">
+              Active Devices
             </div>
           </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
-            <div className="text-yellow-600 dark:text-yellow-400 text-lg font-semibold">
-              {healthData.warningIssues}
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+            <div className="text-gray-600 dark:text-gray-400 text-lg font-semibold">
+              {deviceCount - reportingDevices}
             </div>
-            <div className="text-yellow-600 dark:text-yellow-400 text-xs">
-              Warnings
+            <div className="text-gray-600 dark:text-gray-400 text-xs">
+              Offline
             </div>
           </div>
         </div>
