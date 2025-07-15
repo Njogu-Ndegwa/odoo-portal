@@ -1,36 +1,10 @@
-// 'use client'
-
-// export default function AnalyticsTab() {
-//   return (
-//     <div className="space-y-6">
-//       <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-6">
-//         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-//           Analytics & Reports
-//         </h3>
-//         <div className="text-center py-12">
-//           <div className="text-gray-400 mb-4">
-//             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-//             </svg>
-//           </div>
-//           <h4 className="text-lg font-medium text-gray-800 dark:text-gray-100 mb-2">
-//             Analytics Coming Soon
-//           </h4>
-//           <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-//             This section will include performance analytics, usage trends, 
-//             historical reports, route optimization insights, and custom dashboards.
-//           </p>
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
-
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { BarChart3, TrendingUp, PieChart, Calendar, Download, Filter, ArrowUp, ArrowDown } from 'lucide-react'
+import Design2Table from '@/components/table/table2'
+import { performanceTrendsColumns, PerformanceTrend } from './performanceTrendsColumns'
 
 interface AnalyticsData {
   fleetUtilization: {
@@ -49,12 +23,7 @@ interface AnalyticsData {
     fuelSaved: number
     co2Reduced: number
   }
-  performanceTrends: {
-    period: string
-    health: number
-    utilization: number
-    efficiency: number
-  }[]
+  performanceTrends: PerformanceTrend[]
 }
 
 export default function AnalyticsTab() {
@@ -91,10 +60,50 @@ export default function AnalyticsTab() {
           co2Reduced: 5.8
         },
         performanceTrends: [
-          { period: 'Week 1', health: 92, utilization: 85, efficiency: 88 },
-          { period: 'Week 2', health: 94, utilization: 87, efficiency: 91 },
-          { period: 'Week 3', health: 91, utilization: 92, efficiency: 89 },
-          { period: 'Week 4', health: 93, utilization: 89, efficiency: 93 }
+          {
+            id: 'trend_001',
+            metric: 'Fleet Health Score',
+            currentValue: 92,
+            previousValue: 89,
+            change: 3.4,
+            changeType: 'increase',
+            period: 'Week 1',
+            category: 'Health',
+            updatedAt: new Date().toISOString()
+          },
+          {
+            id: 'trend_002',
+            metric: 'Fleet Utilization Rate',
+            currentValue: 87,
+            previousValue: 84,
+            change: 3.6,
+            changeType: 'increase',
+            period: 'Week 2',
+            category: 'Efficiency',
+            updatedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString()
+          },
+          {
+            id: 'trend_003',
+            metric: 'Response Time',
+            currentValue: 245,
+            previousValue: 289,
+            change: -15.2,
+            changeType: 'decrease',
+            period: 'Week 3',
+            category: 'Performance',
+            updatedAt: new Date(Date.now() - 1000 * 60 * 60).toISOString()
+          },
+          {
+            id: 'trend_004',
+            metric: 'Battery Health Score',
+            currentValue: 91,
+            previousValue: 88,
+            change: 3.4,
+            changeType: 'increase',
+            period: 'Week 4',
+            category: 'Health',
+            updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
+          }
         ]
       })
     } catch (error) {
@@ -243,18 +252,26 @@ export default function AnalyticsTab() {
         </div>
       </div>
 
-      {/* Performance Trends Table */}
+      {/* Performance Trends Table - Updated to use Design2Table */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Performance Trends Summary
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Weekly performance metrics breakdown
+            Key performance indicators and their changes over time
           </p>
         </div>
         
-        <PerformanceTable data={analyticsData.performanceTrends} />
+        <div className="w-full">
+          <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
+            <Design2Table
+              data={analyticsData.performanceTrends}
+              columns={performanceTrendsColumns}
+              selectable={false}
+            />
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -428,78 +445,6 @@ function BatteryHealthChart({ data }: { data: AnalyticsData['batteryHealth'] }) 
           </div>
         ))}
       </div>
-    </div>
-  )
-}
-
-// Performance Table Component
-function PerformanceTable({ data }: { data: AnalyticsData['performanceTrends'] }) {
-  const getChangeIndicator = (current: number, previous: number) => {
-    if (!previous) return null
-    const change = current - previous
-    const percentage = (change / previous) * 100
-    
-    if (Math.abs(percentage) < 0.1) return null
-    
-    return (
-      <div className={`flex items-center gap-1 ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-        {change > 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-        <span className="text-xs">{Math.abs(percentage).toFixed(1)}%</span>
-      </div>
-    )
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700">
-            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
-              Period
-            </th>
-            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
-              Fleet Health
-            </th>
-            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
-              Utilization
-            </th>
-            <th className="text-left py-3 px-4 font-semibold text-gray-900 dark:text-white">
-              Efficiency
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, index) => {
-            const previousRow = data[index - 1]
-            
-            return (
-              <tr key={row.period} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
-                  {row.period}
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-900 dark:text-white">{row.health}%</span>
-                    {getChangeIndicator(row.health, previousRow?.health)}
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-900 dark:text-white">{row.utilization}%</span>
-                    {getChangeIndicator(row.utilization, previousRow?.utilization)}
-                  </div>
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-900 dark:text-white">{row.efficiency}%</span>
-                    {getChangeIndicator(row.efficiency, previousRow?.efficiency)}
-                  </div>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
     </div>
   )
 }

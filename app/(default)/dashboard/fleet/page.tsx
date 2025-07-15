@@ -102,7 +102,7 @@ import { Calendar, Filter, RefreshCw, BarChart3, Truck, Smartphone, TrendingUp }
 
 // Import components (these would be separate files in your project)
 import FleetOverviewTab from './components/FleetOverviewTab'
-import FleetManagementTab from './components/FleetManagementTab' 
+import FleetManagementTab from './components/FleetManagement/FleetManagementTab' 
 import DeviceMonitoringTab from './components/DeviceMonitoringTab'
 import AnalyticsTab from './components/AnalyticsTab'
 
