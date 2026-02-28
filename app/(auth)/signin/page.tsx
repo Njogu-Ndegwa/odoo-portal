@@ -4,7 +4,6 @@
 //   description: "Page description",
 // };
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthHeader from "../auth-header";
 import AuthImage from "../auth-image";
@@ -17,7 +16,6 @@ export default function SignIn() {
     email: "",
     password: "",
   });
-  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -98,7 +96,11 @@ export default function SignIn() {
                   </button>
                 </div>
               </form>
-              {error && <p style={{ color: "red" }}>{error.message}</p>}
+              {error && (
+                <div className="mt-4 bg-red-500/10 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
 
               {/* Footer */}
               <div className="pt-5 mt-6 border-t border-gray-100 dark:border-gray-700/60">

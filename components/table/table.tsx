@@ -269,7 +269,7 @@ export default function Table<T extends TableItemWithNode>({
                 ))}
 
                 {actions && (
-                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap sticky right-0 bg-gray-50 dark:bg-gray-900 z-10 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]">
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap sticky right-0 bg-gray-50 dark:bg-gray-900/20 z-10 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]">
                     <div className="font-semibold text-left">Actions</div>
                   </th>
                 )}

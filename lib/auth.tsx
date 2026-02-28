@@ -1,27 +1,24 @@
-// app/lib/auth.ts
-import { jwtDecode } from 'jwt-decode';
 import { redirect } from 'next/navigation';
 import { useEffect } from 'react';
-interface DecodedToken {
-  user_id: number;
-  username: string | null;
-  email: string;
-  user_type: string;
-  exp: number;
-}
+import { STORAGE_KEYS, isJwtTokenExpired } from '@/lib/odoo-auth';
 
-export const getDecodedToken = (): any | null => {
+export const getDecodedToken = (): Record<string, unknown> | null => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('access_token');
-    console.log(token, "Token---17----")
-    if (token) {
+    const token = localStorage.getItem(STORAGE_KEYS.SALES_ACCESS_TOKEN);
+    if (token && !isJwtTokenExpired(token)) {
       try {
-        const decoded = jwtDecode<any>(token);
-        if (decoded.exp * 1000 > Date.now()) {
-          return decoded;
-        }
-      } catch (error) {
-        console.error('Error decoding token:', error);
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        return JSON.parse(jsonPayload);
+      } catch {
+        return null;
       }
     }
   }
@@ -30,70 +27,55 @@ export const getDecodedToken = (): any | null => {
 
 export const getToken = (): string | null => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('access_token')
+    const token = localStorage.getItem(STORAGE_KEYS.SALES_ACCESS_TOKEN);
+    if (token && !isJwtTokenExpired(token)) return token;
   }
-  return null
-}
+  return null;
+};
 
 export const isAuthenticated = (): boolean => {
   return getDecodedToken() !== null;
 };
 
-// Middleware to protect routes
 export function withAuth(Component: React.ComponentType) {
-  console.log("------38----")
-  return function ProtectedRoute(props: any) {
+  return function ProtectedRoute(props: Record<string, unknown>) {
     if (typeof window !== 'undefined') {
       const decoded = getDecodedToken();
-      console.log(decoded, "Decoded----41----")
       if (!decoded) {
         redirect('/signin');
         return null;
       }
-
       return <Component {...props} />;
     }
     return null;
   };
 }
 
-export function isAuth(Component: any) {
-  return function IsAuth(props: any) {
-    const auth = isAuthenticated;
-
-
+export function isAuth<P extends Record<string, unknown>>(Component: React.ComponentType<P>) {
+  return function IsAuth(props: P) {
     useEffect(() => {
-      const decoded = getDecodedToken();
-      console.log(decoded, "Decoded----41----")
-      if (!decoded) {
+      if (!getDecodedToken()) {
         redirect('/signin');
       }
     }, []);
-
-
-    if (!auth) {
-      return null;
-    }
 
     return <Component {...props} />;
   };
 }
 
-// Custom hook for menu visibility
 export const useMenuVisibility = () => {
   const decoded = getDecodedToken();
-  console.log(decoded, "Decode TOken----85----")
-  const userType = decoded?.roleName || '';
-    console.log(userType, "User Type")
-  const menuPermissions = {
-    SUPER_ADMIN: ['dashboard', 'ecommerce', 'community', 'finance', 'job', 'tasks', 'settings'],
-    DISTRIBUTOR: ['dashboard', 'ecommerce', 'tasks', 'inventory', 'accounts', 'thing', 'staff'],
-    CUSTOMER: ['dashboard', 'ecommerce'],
-  };
-  type UserType = keyof typeof menuPermissions;
-  const canViewMenu = (menuId: string): boolean => {
-    return menuPermissions[userType as keyof typeof menuPermissions]?.includes(menuId) || false;
+  const role = (decoded?.role as string) || '';
+
+  const menuPermissions: Record<string, string[]> = {
+    salesrep: ['dashboard', 'accounts', 'thing', 'staff'],
+    salesattendant: ['dashboard', 'accounts', 'thing', 'staff'],
   };
 
-  return { canViewMenu, userType };
+  const canViewMenu = (menuId: string): boolean => {
+    if (!role) return true;
+    return menuPermissions[role]?.includes(menuId) ?? true;
+  };
+
+  return { canViewMenu, userType: role };
 };

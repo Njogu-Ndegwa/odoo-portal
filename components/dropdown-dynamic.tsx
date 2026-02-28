@@ -7,31 +7,41 @@ import {
     MenuItems,
     MenuItem,
     Transition,
-    TransitionChild,
-    Dialog,
-    DialogPanel
 } from '@headlessui/react'
 import { useSelectedItems } from '@/app/selected-items-context';
-import ModalBlank from './modal-blank';
-import { AgentInterface } from '@/app/(auth)/services/authService';
-import FeedbackModal from './feedback-modal';
+
 interface OptionInterface {
     id: number;
     value: string;
 }
 
 export default function DropdownFull(
-    { options, onDropdownItemSelect }: {  options: any, onDropdownItemSelect:any }) {
+    { options, onDropdownItemSelect }: { options: OptionInterface[], onDropdownItemSelect: (option: OptionInterface) => void }) {
     const { selectedItems } = useSelectedItems()
     const [selected, setSelected] = useState<number>(0)
-
 
     const handleSelect = (option: OptionInterface) => {
         onDropdownItemSelect(option)
     }
 
+    if (selectedItems.length < 1) return null
+
+    if (options.length === 1) {
+        return (
+            <div className="flex items-center">
+                <div className="hidden xl:block text-sm italic mr-2 whitespace-nowrap"><span>{selectedItems.length}</span> items selected</div>
+                <button
+                    className="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100"
+                    onClick={() => handleSelect(options[0])}
+                >
+                    <span>{options[0].value}</span>
+                </button>
+            </div>
+        )
+    }
+
     return (
-        <div className={`${selectedItems.length < 1 && 'hidden'}`}>
+        <div>
             <div className="flex items-center">
                 <div className="hidden xl:block text-sm italic mr-2 whitespace-nowrap"><span>{selectedItems.length}</span> items selected</div>
                 <Menu as="div" className="relative inline-flex w-full">
@@ -56,7 +66,7 @@ export default function DropdownFull(
                                 leaveTo="opacity-0"
                             >
                                 <MenuItems className="font-medium text-sm text-gray-600 dark:text-gray-300 divide-y divide-gray-200 dark:divide-gray-700/60 focus:outline-none min-w-[16rem]">
-                                    {options.map((option: any, optionIndex: any) => (
+                                    {options.map((option, optionIndex) => (
                                         <MenuItem key={optionIndex}>
                                             {({ active }) => (
                                                 <button

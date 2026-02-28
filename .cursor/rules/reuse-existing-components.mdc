@@ -1,0 +1,161 @@
+---
+description: Enforce reuse of existing application components instead of building new ones
+alwaysApply: true
+---
+
+# Reuse Existing Components
+
+Before creating any new component, **always check the catalog below first**. These are the shared components actively used across the running application.
+
+## Rules
+
+1. **Check below before building.** Every component listed here is already in use — reuse it.
+2. **Compose, don't duplicate.** Prefer wrapping or extending an existing component over creating a parallel one.
+3. **Ask permission.** If no existing component fits, **stop and ask the user for explicit permission** before creating a new one. Explain why.
+4. **Document the gap.** When proposing a new component, state which existing ones were considered and why they don't fit.
+5. **Match the Mosaic template design.** If a new component is approved, it **must** follow the same visual design language as the existing Mosaic template used throughout this application — same color palette (violet accents, gray tones), same spacing/padding conventions, same border-radius and shadow styles, same dark mode support, same Tailwind CSS utility patterns, and same Headless UI / Radix UI primitives. New components must look like they belong in this app, not like they came from a different design system.
+
+---
+
+## Active Component Catalog
+
+### UI Layout Shell
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `Sidebar` | `components/ui/sidebar.tsx` | Default layout |
+| `Header` | `components/ui/header.tsx` | Default layout |
+| `SidebarLinkGroup` | `components/ui/sidebar-link-group.tsx` | Sidebar |
+| `SidebarLink` | `components/ui/sidebar-link.tsx` | Sidebar |
+| `Logo` | `components/ui/logo.tsx` | Sidebar, auth pages |
+| `SmallLogo` | `components/ui/smallLogo.tsx` | Sidebar (collapsed) |
+| `Calendar` | `components/ui/calendar.tsx` | Datepicker (transitive) |
+| `Popover` / `PopoverTrigger` / `PopoverContent` | `components/ui/popover.tsx` | Datepicker (transitive) |
+
+### Tables
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `Table` | `components/table/table.tsx` | 9 list pages (customers, asset-accounts, payment-plans, distributor-staff, message-template, message-group, thing/fleet, thing/item, fleet FleetManagementTab) |
+| `Design2Table` | `components/table/table2.tsx` | Fleet AnalyticsTab, asset-accounts code-history, asset-accounts payments |
+
+### Modals
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `FeedbackModal` | `components/feedback-modal.tsx` | All 9 list pages (confirm/delete dialogs) |
+| `SearchableListModal` | `components/seachable-list-modal.tsx` | All 9 list pages (item selection) |
+| `SearchModal` | `components/search-modal.tsx` | Header |
+
+### Dropdowns
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `DropdownDynamic` | `components/dropdown-dynamic.tsx` | All 9 list pages |
+| `DropdownFilter` | `components/dropdown-filter.tsx` | Dashboard main + all 9 list pages |
+| `DropdownProfile` | `components/dropdown-profile.tsx` | Header |
+| `DropdownNotifications` | `components/dropdown-notifications.tsx` | Header |
+| `DropdownHelp` | `components/dropdown-help.tsx` | Header |
+
+### Pagination
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `PaginationClassic` | `components/pagination-classic.tsx` | All 9 list pages + code-history + payments sub-pages |
+
+### Date Pickers
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `DatePickerWithRange` | `components/datepicker.tsx` | Dashboard main, analytics, fintech |
+| `DateSelect` | `components/date-select.tsx` | All 9 list pages |
+
+### Search
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `SearchForm` | `components/search-form.tsx` | All 9 list pages |
+
+### Alerts
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `Alert` | `components/alert.tsx` | 8 list pages |
+
+### Menus
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `EditMenu` | `components/edit-menu.tsx` | Dashboard cards (01, 02, 03) |
+| `EditMenuCard` | `components/edit-menu-card.tsx` | Fintech card 02 |
+
+### Theme
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `ThemeToggle` | `components/theme-toggle.tsx` | Header |
+
+### Tooltip
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `Tooltip` | `components/tooltip.tsx` | Dashboard cards (05, 09) |
+
+### Charts
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `LineChart01` | `components/charts/line-chart-01.tsx` | Dashboard cards 01-03 |
+| `LineChart02` | `components/charts/line-chart-02.tsx` | Dashboard card 08 |
+| `LineChart03` | `components/charts/line-chart-03.tsx` | Analytics card 01 |
+| `LineChart04` | `components/charts/line-chart-04.tsx` | Analytics card 02 |
+| `LineChart05` | `components/charts/line-chart-05.tsx` | Fintech card 01 |
+| `LineChart06` | `components/charts/line-chart-06.tsx` | Fintech card 07 |
+| `LineChart07` | `components/charts/line-chart-07.tsx` | Fintech card 08 |
+| `LineChart08` | `components/charts/line-chart-08.tsx` | Fintech cards 10-13 |
+| `LineChart09` | `components/charts/line-chart-09.tsx` | Fintech card 14 |
+| `BarChart01` | `components/charts/bar-chart-01.tsx` | Dashboard card 04 |
+| `BarChart02` | `components/charts/bar-chart-02.tsx` | Dashboard card 09 |
+| `BarChart03` | `components/charts/bar-chart-03.tsx` | Analytics card 03 |
+| `BarChart04` | `components/charts/bar-chart-04.tsx` | Analytics card 04 |
+| `BarChart05` | `components/charts/bar-chart-05.tsx` | Fintech card 03 |
+| `BarChart06` | `components/charts/bar-chart-06.tsx` | Fintech card 04 |
+| `DoughnutChart` | `components/charts/doughnut-chart.tsx` | Dashboard card 06, analytics cards 08-09, fleet AnalyticsTab |
+| `PieChart` | `components/charts/pie-chart.tsx` | Fintech card 09 |
+| `PolarChart` | `components/charts/polar-chart.tsx` | Analytics card 10 |
+| `RealtimeChart` | `components/charts/realtime-chart.tsx` | Dashboard card 05 |
+| `chartAreaGradient` / `chartColors` | `components/charts/chartjs-config.tsx` | All chart-using dashboard/analytics/fintech cards |
+
+### Utility Hooks & Helpers
+
+| Export | Path | Used By |
+|--------|------|---------|
+| `useWindowWidth` | `components/utils/use-window-width.tsx` | Sidebar |
+| `usePagination` | `components/utils/pagination.ts` | All 9 list pages + code-history |
+| `getCssVariable` | `components/utils/utils.ts` | All dashboard/analytics/fintech card sub-components |
+| `adjustColorOpacity` | `components/utils/utils.ts` | Chart gradient rendering in dashboard/analytics/fintech cards |
+
+---
+
+## Common List-Page Pattern
+
+Most data pages reuse the same combination. When building a new list page, use all of these together:
+
+- `Table` or `Design2Table` — data display
+- `SearchForm` — search input
+- `DateSelect` — date range filter
+- `DropdownFilter` — column/field filter
+- `DropdownDynamic` — multi-select filter
+- `PaginationClassic` — pagination
+- `FeedbackModal` — confirm/delete dialogs
+- `SearchableListModal` — item selection dialogs
+- `Alert` — success/error feedback
+- `usePagination` — cursor-based pagination hook
+
+---
+
+## Unused Components (exist but NOT imported by any active page)
+
+These are available but currently unused. Consider them before building something new:
+
+`Banner`, `Banner02`, `ModalBlank`, `ModalBasic`, `ModalAction`, `ModalCookies`, `DropdownSwitch`, `DropdownFull`, `PaginationNumeric`, `PaginationNumeric02`, `Toast`, `Toast02`, `Toast03`, `Notification`, `AccordionBasic`, `AccordionTableItem`, `AccordionTableRichItem`, `ChannelMenu`, `DeleteButton`, `TableSkeleton`, `ReusableTable`, `LoaderSkeleton`, `searchData`, `useItemSelection`, `formatValue`, `formatThousands`

@@ -1,15 +1,18 @@
 "use client";
 import React, { createContext, useState, useContext, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@apollo/client";
-import { SIGN_IN_USER } from "@/lib/mutations";
-import { ApolloError } from "@apollo/client";
+import {
+  employeeLogin,
+  getSalesUser,
+  clearSalesLogin,
+  type EmployeeUser,
+} from "@/lib/odoo-auth";
 
 interface AuthContextType {
-  user: any;
-  distributorId: string | null;
+  user: EmployeeUser | null;
+  distributorId: string | undefined;
   loading: boolean;
-  error: any;
+  error: string | null;
   signIn: (credentials: { email: string; password: string }) => void;
   signOut: () => void;
 }
@@ -19,64 +22,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<EmployeeUser | null>(() => getSalesUser());
   const [loading, setLoading] = useState(false);
-  const [distributorId, setDistributorId] = useState<string | null>(null);
-  const [error, setError] = useState<ApolloError | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
-  React.useEffect(() => {
-    const storedDistributorId = localStorage.getItem("distributorId");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedDistributorId) {
-      setDistributorId(storedDistributorId);
-    }
-    if (storedUser) {
-      setUser(JSON.parse(storedUser)); // Assuming user is stored as a JSON string
-    }
-  }, []);
-
-  const [signInUser] = useMutation(SIGN_IN_USER, {
-    onCompleted: (data) => {
-      const { accessToken, _id } = data.signInUser;
-      localStorage.setItem("access_token", accessToken);
-      localStorage.setItem("distributorId", _id);
-      //61811cc2bf5a3f81fbeb5d41
-      console.log("Access Token:", accessToken);
-      console.log("User Data:", _id);
-      setUser(data.signInUser.name);
-      setDistributorId(_id);
-      router.push("/dashboard");
-    },
-    onError: (error) => {
-      setError(error);
-    },
-  });
 
   const signIn = async (credentials: { email: string; password: string }) => {
     setLoading(true);
+    setError(null);
     try {
-      await signInUser({ variables: { signInCredentials: credentials } });
-    } catch (err) {
-      console.error(err);
+      const result = await employeeLogin(credentials.email, credentials.password);
+      if (result.success && result.user) {
+        setUser(result.user);
+        router.push("/portal");
+      } else {
+        setError(result.error || "Login failed. Please check your credentials.");
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("distributorId");
+    clearSalesLogin();
     setUser(null);
-    setDistributorId(null);
     router.push("/signin");
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, distributorId, loading, error, signIn, signOut }}
-    >
+    <AuthContext.Provider value={{ user, distributorId: user?.companyId?.toString(), loading, error, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

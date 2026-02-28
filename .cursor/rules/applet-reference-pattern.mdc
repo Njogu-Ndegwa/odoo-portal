@@ -1,0 +1,68 @@
+# Applet Reference Pattern
+
+The **Customers applet** (`app/(portal)/portal/customers/`) is the reference implementation for all portal applets. When building a new applet (Products, Orders, Settings, etc.), follow this exact structure.
+
+## File Structure per Applet
+
+```
+app/(portal)/portal/<applet>/
+  page.tsx            # List page (SelectedItemsProvider wrapper + main component)
+  tableColumns.tsx    # Column definitions + dropdownOptions
+  tableActions.tsx    # Row action buttons (Edit, Delete, View) with FeedbackModal
+  new/page.tsx        # Create form
+  [id]/page.tsx       # Detail view
+  [id]/edit/page.tsx  # Edit form
+```
+
+## List Page Pattern (page.tsx)
+
+Every list page must:
+1. Wrap in `<SelectedItemsProvider>` (required by DynamicDropdown and Table selectable)
+2. Use these reusable components in this layout:
+   - **Header row**: Title on left, `SearchForm` + Add button on right
+   - **Filter row**: Type pills on left, `DynamicDropdown` + `DateSelect` + `FilterButton` on right
+   - **Table**: `Table` component with `columns`, `actions`, `selectable`, `onSelectionChange`, `isLoading`
+   - **Pagination row**: `PageSizeSelect` on left, `PaginationClassic` on right
+3. Include `SearchableListModal` for assign-to-agent flows (if applicable)
+4. Breadcrumb: `Portal / <Applet Name>`
+5. Default `itemsPerPage` to `10`
+6. Debounced search (500ms)
+6. Filters via `useMemo` building a filters object passed to the service function
+7. Page resets to 1 when any filter changes
+
+## Form Pages (new/page.tsx, [id]/edit/page.tsx)
+
+- Breadcrumb navigation at top
+- Title below breadcrumb
+- Form wrapped in a Mosaic card (`bg-white dark:bg-gray-800 shadow-sm rounded-xl border`)
+- Card has `header` (section title), content area (grid gap-5 md:grid-cols-2), `footer` (Cancel + Submit)
+- `form-input w-full` for all inputs
+- After create: redirect to list page (`/portal/<applet>`) -- never to detail page
+- After edit: redirect to list page (`/portal/<applet>`) -- never to detail page. No intermediate review screen.
+- Edit breadcrumb: `Portal / <Applet> / Edit` -- do NOT link to the detail page in the breadcrumb
+
+## Detail Page ([id]/page.tsx)
+
+- Breadcrumb: `Portal / <Applet> / <Item Name>`
+- Title + Edit button in header row
+- Details in a Mosaic card with `header` + `grid gap-5 md:grid-cols-2` for fields
+
+## Column/Action Files
+
+- `tableColumns.tsx`: Export `columns: TableColumn<any>[]` with `cellRenderer` for each column, and `dropdownOptions` array
+- `tableActions.tsx`: Export `actions({ row, onDelete })` returning Edit/Delete/View buttons + `FeedbackModal`
+
+## Key Imports (copy from customers)
+
+```typescript
+import Table from '@/components/table/table'
+import DynamicDropdown from '@/components/dropdown-dynamic'
+import DateSelect from '@/components/date-select'
+import FilterButton from '@/components/dropdown-filter'
+import SearchForm from '@/components/search-form'
+import PaginationClassic from '@/components/pagination-classic'
+import PageSizeSelect from '@/components/page-size-select'
+import { SearchableListModal } from '@/components/seachable-list-modal'
+import { SelectedItemsProvider, useSelectedItems } from '@/app/selected-items-context'
+import { useAlert } from '@/app/contexts/alertContext'
+```
