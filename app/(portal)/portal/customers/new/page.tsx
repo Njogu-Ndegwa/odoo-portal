@@ -2,14 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useMutation } from '@apollo/client'
 import Link from 'next/link'
-import { getSalesToken, getSalesUser } from '@/lib/odoo-auth'
-import { createCustomer } from '@/lib/services/customer-service'
+import { getSalesUser } from '@/lib/odoo-auth'
+import { CREATE_CUSTOMER } from '@/lib/portal/mutations'
+import type { CreateCustomerData } from '@/lib/portal/types'
+import { useAlert } from '@/app/contexts/alertContext'
 
 export default function CustomerCreatePage() {
   const router = useRouter()
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { alert } = useAlert()
   const [isCompany, setIsCompany] = useState(false)
   const [form, setForm] = useState({
     name: '',
@@ -21,6 +23,8 @@ export default function CustomerCreatePage() {
     zip: '',
   })
 
+  const [createCustomer, { loading: saving }] = useMutation<CreateCustomerData>(CREATE_CUSTOMER)
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
@@ -28,47 +32,43 @@ export default function CustomerCreatePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
 
     if (!form.name.trim()) {
-      setError('Name is required.')
+      alert({ text: 'Name is required.', type: 'error' })
       return
     }
     if (!form.email.trim() && !form.phone.trim()) {
-      setError('At least one of email or phone is required.')
-      return
-    }
-
-    const token = getSalesToken()
-    if (!token) {
-      setError('Session expired. Please log in again.')
+      alert({ text: 'At least one of email or phone is required.', type: 'error' })
       return
     }
 
     const user = getSalesUser()
-    const companyId = user?.companyId
 
-    setSaving(true)
     try {
-      await createCustomer(
-        {
-          name: form.name.trim(),
-          email: form.email.trim() || undefined,
-          phone: form.phone.trim() || undefined,
-          mobile: form.mobile.trim() || undefined,
-          street: form.street.trim() || undefined,
-          city: form.city.trim() || undefined,
-          zip: form.zip.trim() || undefined,
-          is_company: isCompany,
-          company_id: companyId,
+      const { data } = await createCustomer({
+        variables: {
+          input: {
+            name: form.name.trim(),
+            email: form.email.trim() || undefined,
+            phone: form.phone.trim() || undefined,
+            mobile: form.mobile.trim() || undefined,
+            street: form.street.trim() || undefined,
+            city: form.city.trim() || undefined,
+            zip: form.zip.trim() || undefined,
+            isCompany,
+            companyId: user?.companyId,
+          },
         },
-        token
-      )
-      router.push('/portal/customers')
+      })
+
+      if (data?.createCustomer.success) {
+        alert({ text: 'Customer created successfully', type: 'success' })
+        router.push('/portal/customers')
+      } else {
+        alert({ text: data?.createCustomer.message || 'Failed to create customer', type: 'error' })
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create customer')
-    } finally {
-      setSaving(false)
+      alert({ text: err instanceof Error ? err.message : 'Failed to create customer', type: 'error' })
     }
   }
 
@@ -89,12 +89,6 @@ export default function CustomerCreatePage() {
           Create a Customer
         </h1>
       </div>
-
-      {error && (
-        <div className="mb-4 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit}>
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60">

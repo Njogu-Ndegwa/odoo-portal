@@ -1,20 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useQuery, useMutation } from '@apollo/client'
 import Link from 'next/link'
-import { getSalesToken } from '@/lib/odoo-auth'
-import { getCustomerById, updateCustomer } from '@/lib/services/customer-service'
+import { CUSTOMER_QUERY } from '@/lib/portal/queries'
+import { UPDATE_CUSTOMER } from '@/lib/portal/mutations'
+import type { CustomerDetailResponse, UpdateCustomerData } from '@/lib/portal/types'
+import { useAlert } from '@/app/contexts/alertContext'
 
 export default function CustomerEditPage() {
   const params = useParams()
   const router = useRouter()
-  const id = Number(params.id)
+  const id = params.id as string
 
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [customerName, setCustomerName] = useState('')
+  const { alert } = useAlert()
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -24,30 +24,26 @@ export default function CustomerEditPage() {
     zip: '',
   })
 
+  const { data, loading: fetching } = useQuery<CustomerDetailResponse>(CUSTOMER_QUERY, {
+    variables: { id },
+    skip: !id,
+  })
+
+  const [updateCustomer, { loading: saving }] = useMutation<UpdateCustomerData>(UPDATE_CUSTOMER)
+
   useEffect(() => {
-    async function load() {
-      const token = getSalesToken()
-      if (!token || !id) return
-      try {
-        const result = await getCustomerById(id, token)
-        const c = result.customer
-        setCustomerName(c.name)
-        setForm({
-          name: c.name,
-          email: c.email,
-          phone: c.phone,
-          street: c.street,
-          city: c.city,
-          zip: c.zip,
-        })
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Failed to load customer')
-      } finally {
-        setLoading(false)
-      }
+    if (data?.customer) {
+      const c = data.customer
+      setForm({
+        name: c.name || '',
+        email: c.email || '',
+        phone: c.phone || '',
+        street: c.street || '',
+        city: c.city || '',
+        zip: c.zip || '',
+      })
     }
-    load()
-  }, [id])
+  }, [data])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -56,42 +52,39 @@ export default function CustomerEditPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
 
     if (!form.name.trim()) {
-      setError('Name is required.')
+      alert({ text: 'Name is required.', type: 'error' })
       return
     }
 
-    const token = getSalesToken()
-    if (!token) {
-      setError('Session expired. Please log in again.')
-      return
-    }
-
-    setSaving(true)
     try {
-      await updateCustomer(
-        id,
-        {
-          name: form.name.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim(),
-          street: form.street.trim(),
-          city: form.city.trim(),
-          zip: form.zip.trim(),
+      const { data: result } = await updateCustomer({
+        variables: {
+          id,
+          input: {
+            name: form.name.trim(),
+            email: form.email.trim() || undefined,
+            phone: form.phone.trim() || undefined,
+            street: form.street.trim() || undefined,
+            city: form.city.trim() || undefined,
+            zip: form.zip.trim() || undefined,
+          },
         },
-        token
-      )
-      router.push('/portal/customers')
+      })
+
+      if (result?.updateCustomer.success) {
+        alert({ text: 'Customer updated successfully', type: 'success' })
+        router.push('/portal/customers')
+      } else {
+        alert({ text: result?.updateCustomer.message || 'Failed to update customer', type: 'error' })
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to update customer')
-    } finally {
-      setSaving(false)
+      alert({ text: err instanceof Error ? err.message : 'Failed to update customer', type: 'error' })
     }
   }
 
-  if (loading) {
+  if (fetching) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
         <div className="text-gray-400 py-12 text-center">Loading...</div>
@@ -116,12 +109,6 @@ export default function CustomerEditPage() {
           Edit Customer
         </h1>
       </div>
-
-      {error && (
-        <div className="mb-4 bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit}>
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60">

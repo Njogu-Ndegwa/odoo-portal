@@ -1,35 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { useQuery } from '@apollo/client'
 import Link from 'next/link'
 import { Pencil } from 'lucide-react'
-import { getSalesToken } from '@/lib/odoo-auth'
-import { getProductById, type Product } from '@/lib/services/product-service'
+import { PRODUCT_UNIT_QUERY } from '@/lib/portal/queries'
+import type { ProductUnitDetailResponse } from '@/lib/portal/types'
 
 export default function ProductDetailPage() {
   const params = useParams()
-  const id = Number(params.id)
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const id = params.id as string
 
-  useEffect(() => {
-    async function load() {
-      const token = getSalesToken()
-      if (!token || !id) return
-      setLoading(true)
-      try {
-        const result = await getProductById(id, token)
-        setProduct(result.product)
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Failed to load product')
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [id])
+  const { data, loading, error } = useQuery<ProductUnitDetailResponse>(PRODUCT_UNIT_QUERY, {
+    variables: { id },
+    skip: !id,
+  })
+
+  const product = data?.productUnit
 
   if (loading) {
     return (
@@ -50,7 +37,7 @@ export default function ProductDetailPage() {
           <span className="text-gray-800 dark:text-gray-100 font-medium">Error</span>
         </nav>
         <div className="bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
-          {error || 'Product not found.'}
+          {error?.message || 'Product not found.'}
         </div>
       </div>
     )
@@ -58,7 +45,7 @@ export default function ProductDetailPage() {
 
   const fields = [
     { label: 'SKU', value: product.sku },
-    { label: 'Price', value: `${product.currencyName} ${product.listPrice.toLocaleString()}` },
+    { label: 'Price', value: `${product.currencyName || ''} ${product.listPrice?.toLocaleString() ?? '-'}` },
     { label: 'Type', value: product.type },
     { label: 'PU Category', value: product.puCategory },
     { label: 'PU Metric', value: product.puMetric },

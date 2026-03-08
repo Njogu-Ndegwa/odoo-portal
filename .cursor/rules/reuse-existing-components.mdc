@@ -126,6 +126,16 @@ Before creating any new component, **always check the catalog below first**. The
 | `RealtimeChart` | `components/charts/realtime-chart.tsx` | Dashboard card 05 |
 | `chartAreaGradient` / `chartColors` | `components/charts/chartjs-config.tsx` | All chart-using dashboard/analytics/fintech cards |
 
+### Multi-Step / Detail Components
+
+| Component | Path | Used By |
+|-----------|------|---------|
+| `StepPipeline` | `components/step-pipeline.tsx` | Orders detail page. Horizontal step wizard with icons, click navigation, and progress connectors. Generic — usable for any multi-step flow (onboarding, checkout, workflows). |
+| `ActivityTimeline` | `components/activity-timeline.tsx` | Orders detail page. Vertical timeline with colored dots for event history. Generic — usable for audit logs, comments, status changes. |
+| `InfoBar` | `components/info-bar.tsx` | Orders detail page. Horizontal bar of label/value pairs for entity summaries. Generic — usable for any entity header. |
+| `StatusBanner` | `components/status-banner.tsx` | Orders detail page. Full-width banner with success/info/warning/danger variants. Generic — usable for any status or alert messaging. |
+| `ComboboxSearch` | `components/combobox-search.tsx` | Orders new/edit/detail pages. Generic searchable dropdown (`<T>`) for entity selection with keyboard navigation, loading state, and keep-open-on-select mode. |
+
 ### Utility Hooks & Helpers
 
 | Export | Path | Used By |
@@ -151,6 +161,17 @@ Most data pages reuse the same combination. When building a new list page, use a
 - `SearchableListModal` — item selection dialogs
 - `Alert` — success/error feedback
 - `usePagination` — cursor-based pagination hook
+
+## Common Detail-Page Pattern
+
+When building a detail page with a multi-step workflow, use these together:
+
+- `StepPipeline` — step wizard navigation
+- `StatusBanner` — contextual status messaging (success, warning, etc.)
+- `InfoBar` — key-value summary bar
+- `ActivityTimeline` — event/audit history
+- `ComboboxSearch` — searchable entity selection (customers, products, etc.)
+- `FeedbackModal` — confirm/delete dialogs
 
 ---
 

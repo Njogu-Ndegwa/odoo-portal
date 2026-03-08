@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useMutation } from '@apollo/client';
 import { Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import FeedbackModal from '@/components/feedback-modal';
-import { getSalesToken } from '@/lib/odoo-auth';
-import { deleteProductItem } from '@/lib/services/product-service';
+import { useAlert } from '@/app/contexts/alertContext';
+import { DELETE_PRODUCT_UNIT } from '@/lib/portal/mutations';
 
 interface ActionProps {
     row: any;
@@ -14,9 +15,12 @@ interface ActionProps {
 
 export const actions = ({ row, onDelete }: ActionProps) => {
     const router = useRouter();
+    const { alert } = useAlert();
     const [dangerModalOpen, setDangerModalOpen] = useState(false);
     const productId = row.id;
     const productName = row.name || 'this product';
+
+    const [deleteProduct] = useMutation(DELETE_PRODUCT_UNIT);
 
     const handleEdit = () => {
         router.push(`/portal/products/${productId}/edit`);
@@ -27,18 +31,14 @@ export const actions = ({ row, onDelete }: ActionProps) => {
     };
 
     const handleConfirmDelete = async () => {
-        const token = getSalesToken();
-        if (!token) return;
-
         try {
-            await deleteProductItem(productId, token);
-        } catch (err) {
-            console.error('Failed to delete product:', err);
-        } finally {
+            await deleteProduct({ variables: { id: String(productId) } });
+            alert({ text: `${productName} deleted successfully`, type: 'success' });
             setDangerModalOpen(false);
-            if (onDelete) {
-                onDelete();
-            }
+            onDelete?.();
+        } catch (err) {
+            alert({ text: err instanceof Error ? err.message : 'Failed to delete product', type: 'error' });
+            setDangerModalOpen(false);
         }
     };
 

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useQuery, useMutation } from '@apollo/client'
 import Link from 'next/link'
 import Table from '@/components/table/table'
 import DynamicDropdown from '@/components/dropdown-dynamic'
@@ -16,17 +17,11 @@ import { useAlert } from '@/app/contexts/alertContext'
 import { columns, dropdownOptions } from './tableColumns'
 import { actions } from './tableActions'
 import { getSalesToken, getSalesUser } from '@/lib/odoo-auth'
-import {
-  getAllCustomers,
-  searchCustomers,
-  fetchEmployees,
-  assignCustomerToEmployee,
-  type ExistingCustomer,
-  type Employee,
-  type CustomerFilters,
-} from '@/lib/services/customer-service'
+import { fetchEmployees, type Employee } from '@/lib/services/customer-service'
+import { CUSTOMERS_QUERY } from '@/lib/portal/queries'
+import { ASSIGN_CUSTOMER_TO_EMPLOYEE } from '@/lib/portal/mutations'
+import type { CustomersListResponse, CustomersFilterInput, ContactType } from '@/lib/portal/types'
 
-// Date options mapped to created_after offsets
 const dateOptions = [
   { id: 0, period: 'Today' },
   { id: 1, period: 'Last 7 Days' },
@@ -55,6 +50,12 @@ const advancedFilterDefs: FilterDefinition[] = [
 
 type TypeFilter = 'all' | 'individual' | 'company'
 
+const typeFilterMap: Record<TypeFilter, ContactType | undefined> = {
+  all: undefined,
+  individual: 'INDIVIDUAL',
+  company: 'COMPANY',
+}
+
 export default function PortalCustomersPageWrapper() {
   return (
     <SelectedItemsProvider>
@@ -64,23 +65,16 @@ export default function PortalCustomersPageWrapper() {
 }
 
 function PortalCustomersPage() {
-  const [customers, setCustomers] = useState<ExistingCustomer[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [total, setTotal] = useState(0)
-  const [hasNextPage, setHasNextPage] = useState(false)
-  const [hasPreviousPage, setHasPreviousPage] = useState(false)
 
-  // Filters
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [dateFilterId, setDateFilterId] = useState<number>(4)
   const [customDateRange, setCustomDateRange] = useState<{ from: string; to: string } | null>(null)
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, boolean>>({})
 
-  // Assign agent
   const [employees, setEmployees] = useState<Employee[]>([])
   const [agentSearchQuery, setAgentSearchQuery] = useState('')
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null)
@@ -90,84 +84,65 @@ function PortalCustomersPage() {
   const { alert } = useAlert()
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 500)
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500)
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  const filters = useMemo<CustomerFilters>(() => {
-    const f: CustomerFilters = {}
-    if (typeFilter !== 'all') f.type = typeFilter
+  const filters = useMemo<CustomersFilterInput>(() => {
+    const f: CustomersFilterInput = { page, limit: itemsPerPage }
+
+    const gqlType = typeFilterMap[typeFilter]
+    if (gqlType) f.type = gqlType
+
+    if (debouncedSearchTerm.trim()) f.search = debouncedSearchTerm.trim()
+
     if (customDateRange) {
-      f.created_after = customDateRange.from
-      f.created_before = customDateRange.to
+      f.createdAfter = customDateRange.from
+      f.createdBefore = customDateRange.to
     } else {
       const createdAfter = getDateOffset(dateFilterId)
-      if (createdAfter) f.created_after = createdAfter
+      if (createdAfter) f.createdAfter = createdAfter
     }
-    if (advancedFilters.all_company) f.all_company = true
+
+    if (advancedFilters.all_company) f.allCompany = true
     if (advancedFilters.strict) f.strict = true
     if (advancedFilters.recently_updated) {
       const d = new Date()
       d.setDate(d.getDate() - 7)
-      f.updated_after = d.toISOString().split('T')[0]
+      f.updatedAfter = d.toISOString().split('T')[0]
     }
+
     return f
-  }, [typeFilter, dateFilterId, customDateRange, advancedFilters])
+  }, [typeFilter, dateFilterId, customDateRange, advancedFilters, debouncedSearchTerm, page, itemsPerPage])
 
-  const fetchCustomerData = useCallback(async () => {
-    const token = getSalesToken()
-    if (!token) return
+  const { data, loading, refetch } = useQuery<CustomersListResponse>(CUSTOMERS_QUERY, {
+    variables: { filters },
+    fetchPolicy: 'cache-and-network',
+  })
 
-    setLoading(true)
-    try {
-      const result = debouncedSearchTerm.trim()
-        ? await searchCustomers(debouncedSearchTerm, token)
-        : await getAllCustomers(page, itemsPerPage, token, filters)
+  const customers = data?.customers.data ?? []
+  const pagination = data?.customers.pagination
+  const total = pagination?.totalRecords ?? 0
+  const hasNextPage = pagination?.hasNextPage ?? false
+  const hasPreviousPage = pagination?.hasPreviousPage ?? false
 
-      setCustomers(result.customers)
-      setTotal(result.total)
-      setHasNextPage(result.hasNextPage)
-      setHasPreviousPage(result.hasPreviousPage)
-    } catch (err: unknown) {
-      console.error('Failed to load customers:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, itemsPerPage, debouncedSearchTerm, filters])
-
-  useEffect(() => {
-    fetchCustomerData()
-  }, [fetchCustomerData])
+  const [assignCustomer] = useMutation(ASSIGN_CUSTOMER_TO_EMPLOYEE)
 
   useEffect(() => {
     setPage(1)
   }, [debouncedSearchTerm, typeFilter, dateFilterId, customDateRange, advancedFilters])
 
-  const loadEmployees = useCallback(async () => {
+  useEffect(() => {
+    if (!isAgentModalOpen) return
     const token = getSalesToken()
     const user = getSalesUser()
-    try {
-      const result = await fetchEmployees(
-        { companyId: user?.companyId, search: agentSearchQuery || undefined },
-        token || undefined
-      )
-      setEmployees(result.employees)
-    } catch (err) {
-      console.error('Failed to load employees:', err)
-    }
-  }, [agentSearchQuery])
-
-  useEffect(() => {
-    if (isAgentModalOpen) {
-      loadEmployees()
-    }
-  }, [isAgentModalOpen, loadEmployees])
-
-  const handleSearch = (term: string) => {
-    setSearchTerm(term)
-  }
+    fetchEmployees(
+      { companyId: user?.companyId, search: agentSearchQuery || undefined },
+      token || undefined
+    )
+      .then((result) => setEmployees(result.employees))
+      .catch((err) => console.error('Failed to load employees:', err))
+  }, [isAgentModalOpen, agentSearchQuery])
 
   const handleDropdownItemSelect = () => {
     setIsAgentModalOpen(true)
@@ -178,12 +153,10 @@ function PortalCustomersPage() {
   }
 
   const handleAssignAction = async () => {
-    const token = getSalesToken()
-    if (!token || !selectedAgentId) {
+    if (!selectedAgentId) {
       alert({ text: 'Select an agent first', type: 'error' })
       return
     }
-
     if (selectedItems.length === 0) {
       alert({ text: 'Select at least one customer first', type: 'error' })
       return
@@ -191,12 +164,14 @@ function PortalCustomersPage() {
 
     try {
       for (const customerId of selectedItems) {
-        await assignCustomerToEmployee(Number(customerId), selectedAgentId, token)
+        await assignCustomer({
+          variables: { input: { customerId: Number(customerId), employeeId: selectedAgentId } },
+        })
       }
       alert({ text: `${selectedItems.length} customer(s) assigned successfully`, type: 'success' })
       setSelectedItems([])
       setSelectedAgentId(null)
-      await fetchCustomerData()
+      refetch()
     } catch (err: unknown) {
       alert({ text: err instanceof Error ? err.message : 'Assignment failed', type: 'error' })
     }
@@ -204,23 +179,6 @@ function PortalCustomersPage() {
 
   const handleSelectionChange = (ids: any[]) => {
     setSelectedItems(ids)
-  }
-
-  const handleDateChange = (optionId: number) => {
-    setDateFilterId(optionId)
-    if (optionId !== -1) setCustomDateRange(null)
-  }
-
-  const handleCustomRange = (from: string, to: string) => {
-    setCustomDateRange({ from, to })
-  }
-
-  const handleAdvancedFilterChange = (values: Record<string, boolean>) => {
-    setAdvancedFilters(values)
-  }
-
-  const handleTypeChange = (type: TypeFilter) => {
-    setTypeFilter(type)
   }
 
   const handleNextPage = () => {
@@ -236,8 +194,8 @@ function PortalCustomersPage() {
     setPage(1)
   }
 
-  const loadData = async () => {
-    await fetchCustomerData()
+  const loadData = () => {
+    refetch()
     setSelectedItems([])
   }
 
@@ -293,7 +251,7 @@ function PortalCustomersPage() {
           <SearchForm
             placeholder="Search"
             searchTerm={searchTerm}
-            setSearchTerm={handleSearch}
+            setSearchTerm={setSearchTerm}
           />
           <Link
             href="/portal/customers/new"
@@ -327,7 +285,7 @@ function PortalCustomersPage() {
                       ? 'border-transparent bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-800'
                       : 'border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
-                  onClick={() => handleTypeChange(pill.key)}
+                  onClick={() => setTypeFilter(pill.key)}
                 >
                   {pill.label}
                   {pill.key === 'all' && <span className="ml-1 text-gray-400 dark:text-gray-500">{total}</span>}
@@ -343,15 +301,15 @@ function PortalCustomersPage() {
           <DateSelect
             options={dateOptions}
             selected={dateFilterId}
-            onChange={handleDateChange}
+            onChange={(optionId: number) => { setDateFilterId(optionId); if (optionId !== -1) setCustomDateRange(null) }}
             enableCustomRange
-            onCustomRange={handleCustomRange}
+            onCustomRange={(from: string, to: string) => setCustomDateRange({ from, to })}
           />
           <FilterButton
             align="right"
             filters={advancedFilterDefs}
             values={advancedFilters}
-            onChange={handleAdvancedFilterChange}
+            onChange={setAdvancedFilters}
           />
         </div>
       </div>

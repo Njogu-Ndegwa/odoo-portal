@@ -41,7 +41,7 @@ const applets: Applet[] = [
   },
   {
     title: 'Orders',
-    href: '/orders',
+    href: '/portal/orders',
     gradient: 'from-green-500 to-green-600',
     enabled: true,
     icon: (

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { useQuery } from '@apollo/client'
 import Link from 'next/link'
 import Table from '@/components/table/table'
 import DynamicDropdown from '@/components/dropdown-dynamic'
@@ -13,12 +14,9 @@ import PageSizeSelect from '@/components/page-size-select'
 import { SelectedItemsProvider, useSelectedItems } from '@/app/selected-items-context'
 import { columns, dropdownOptions } from './tableColumns'
 import { actions } from './tableActions'
-import { getSalesToken, getSalesUser } from '@/lib/odoo-auth'
-import {
-  getAllProducts,
-  type Product,
-  type ProductFilters,
-} from '@/lib/services/product-service'
+import { getSalesUser } from '@/lib/odoo-auth'
+import { PRODUCT_UNITS_QUERY } from '@/lib/portal/queries'
+import type { ProductUnitsListResponse, ProductUnitsFilterInput } from '@/lib/portal/types'
 
 const dateOptions = [
   { id: 0, period: 'Today' },
@@ -61,15 +59,10 @@ export default function PortalProductsPageWrapper() {
 }
 
 function PortalProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [total, setTotal] = useState(0)
-  const [hasNextPage, setHasNextPage] = useState(false)
-  const [hasPreviousPage, setHasPreviousPage] = useState(false)
 
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [dateFilterId, setDateFilterId] = useState<number>(4)
@@ -79,80 +72,50 @@ function PortalProductsPage() {
   const { setSelectedItems } = useSelectedItems()
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm)
-    }, 500)
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500)
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  const filters = useMemo<ProductFilters>(() => {
-    const f: ProductFilters = {}
+  const filters = useMemo<ProductUnitsFilterInput>(() => {
+    const f: ProductUnitsFilterInput = { page, limit: itemsPerPage }
     const user = getSalesUser()
-    if (user?.companyId) f.company_id = user.companyId
-    if (categoryFilter !== 'all') f.pu_category = categoryFilter
+    if (user?.companyId) f.companyId = user.companyId
+    if (categoryFilter !== 'all') f.puCategory = categoryFilter
     if (debouncedSearchTerm.trim()) f.search = debouncedSearchTerm.trim()
 
     if (customDateRange) {
-      f.created_after = customDateRange.from
-      f.created_before = customDateRange.to
+      f.createdAfter = customDateRange.from
+      f.createdBefore = customDateRange.to
     } else {
       const createdAfter = getDateOffset(dateFilterId)
-      if (createdAfter) f.created_after = createdAfter
+      if (createdAfter) f.createdAfter = createdAfter
     }
 
-    if (advancedFilters.service_access) f.service_type = 'access'
-    else if (advancedFilters.service_gage) f.service_type = 'gage'
+    if (advancedFilters.service_access) f.serviceType = 'access'
+    else if (advancedFilters.service_gage) f.serviceType = 'gage'
 
     const contractKey = Object.keys(advancedFilters).find(
       (k) => k.startsWith('contract_') && advancedFilters[k]
     )
-    if (contractKey) f.contract_type = contractKey.replace('contract_', '')
+    if (contractKey) f.contractType = contractKey.replace('contract_', '')
 
     return f
-  }, [categoryFilter, debouncedSearchTerm, dateFilterId, customDateRange, advancedFilters])
+  }, [categoryFilter, debouncedSearchTerm, dateFilterId, customDateRange, advancedFilters, page, itemsPerPage])
 
-  const fetchProducts = useCallback(async () => {
-    const token = getSalesToken()
-    if (!token) return
+  const { data, loading, refetch } = useQuery<ProductUnitsListResponse>(PRODUCT_UNITS_QUERY, {
+    variables: { filters },
+    fetchPolicy: 'cache-and-network',
+  })
 
-    setLoading(true)
-    try {
-      const result = await getAllProducts(page, itemsPerPage, token, filters)
-      setProducts(result.products)
-      setTotal(result.total)
-      setHasNextPage(result.hasNextPage)
-      setHasPreviousPage(result.hasPreviousPage)
-    } catch (err: unknown) {
-      console.error('Failed to load products:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, itemsPerPage, filters])
-
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+  const products = data?.productUnits.data ?? []
+  const pagination = data?.productUnits.pagination
+  const total = pagination?.totalRecords ?? 0
+  const hasNextPage = pagination?.hasNextPage ?? false
+  const hasPreviousPage = pagination?.hasPreviousPage ?? false
 
   useEffect(() => {
     setPage(1)
   }, [debouncedSearchTerm, categoryFilter, dateFilterId, customDateRange, advancedFilters])
-
-  const handleSearch = (term: string) => {
-    setSearchTerm(term)
-  }
-
-  const handleDateChange = (optionId: number) => {
-    setDateFilterId(optionId)
-    if (optionId !== -1) setCustomDateRange(null)
-  }
-
-  const handleCustomRange = (from: string, to: string) => {
-    setCustomDateRange({ from, to })
-  }
-
-  const handleAdvancedFilterChange = (values: Record<string, boolean>) => {
-    setAdvancedFilters(values)
-  }
 
   const handleNextPage = () => {
     if (hasNextPage) setPage((p) => p + 1)
@@ -171,8 +134,8 @@ function PortalProductsPage() {
     setSelectedItems(ids)
   }
 
-  const loadData = async () => {
-    await fetchProducts()
+  const loadData = () => {
+    refetch()
     setSelectedItems([])
   }
 
@@ -205,7 +168,7 @@ function PortalProductsPage() {
           <SearchForm
             placeholder="Search"
             searchTerm={searchTerm}
-            setSearchTerm={handleSearch}
+            setSearchTerm={setSearchTerm}
           />
           <Link
             href="/portal/products/new"
@@ -247,15 +210,15 @@ function PortalProductsPage() {
           <DateSelect
             options={dateOptions}
             selected={dateFilterId}
-            onChange={handleDateChange}
+            onChange={(optionId: number) => { setDateFilterId(optionId); if (optionId !== -1) setCustomDateRange(null) }}
             enableCustomRange
-            onCustomRange={handleCustomRange}
+            onCustomRange={(from: string, to: string) => setCustomDateRange({ from, to })}
           />
           <FilterButton
             align="right"
             filters={advancedFilterDefs}
             values={advancedFilters}
-            onChange={handleAdvancedFilterChange}
+            onChange={setAdvancedFilters}
           />
         </div>
       </div>

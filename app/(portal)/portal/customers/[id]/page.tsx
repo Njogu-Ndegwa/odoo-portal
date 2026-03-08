@@ -1,36 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
+import { useQuery } from '@apollo/client'
 import Link from 'next/link'
 import { Pencil } from 'lucide-react'
-import { getSalesToken } from '@/lib/odoo-auth'
-import { getCustomerById, type ExistingCustomer } from '@/lib/services/customer-service'
+import { CUSTOMER_QUERY } from '@/lib/portal/queries'
+import type { CustomerDetailResponse } from '@/lib/portal/types'
 
 export default function CustomerDetailPage() {
   const params = useParams()
-  const router = useRouter()
-  const id = Number(params.id)
-  const [customer, setCustomer] = useState<ExistingCustomer | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const id = params.id as string
 
-  useEffect(() => {
-    async function load() {
-      const token = getSalesToken()
-      if (!token || !id) return
-      setLoading(true)
-      try {
-        const result = await getCustomerById(id, token)
-        setCustomer(result.customer)
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Failed to load customer')
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [id])
+  const { data, loading, error } = useQuery<CustomerDetailResponse>(CUSTOMER_QUERY, {
+    variables: { id },
+    skip: !id,
+  })
+
+  const customer = data?.customer
 
   if (loading) {
     return (
@@ -51,7 +37,7 @@ export default function CustomerDetailPage() {
           <span className="text-gray-800 dark:text-gray-100 font-medium">Error</span>
         </nav>
         <div className="bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
-          {error || 'Customer not found.'}
+          {error?.message || 'Customer not found.'}
         </div>
       </div>
     )

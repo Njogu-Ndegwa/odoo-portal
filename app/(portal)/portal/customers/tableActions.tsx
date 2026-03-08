@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useMutation } from '@apollo/client';
 import { Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import FeedbackModal from '@/components/feedback-modal';
-import { getSalesToken } from '@/lib/odoo-auth';
-import { deleteCustomer } from '@/lib/services/customer-service';
+import { useAlert } from '@/app/contexts/alertContext';
+import { DELETE_CUSTOMER } from '@/lib/portal/mutations';
 
 interface ActionProps {
     row: any;
@@ -14,9 +15,12 @@ interface ActionProps {
 
 export const actions = ({ row, onDelete }: ActionProps) => {
     const router = useRouter();
+    const { alert } = useAlert();
     const [dangerModalOpen, setDangerModalOpen] = useState(false);
     const customerId = row.id;
     const customerName = row.name || 'this customer';
+
+    const [deleteCustomer] = useMutation(DELETE_CUSTOMER);
 
     const handleEdit = () => {
         router.push(`/portal/customers/${customerId}/edit`);
@@ -27,18 +31,14 @@ export const actions = ({ row, onDelete }: ActionProps) => {
     };
 
     const handleConfirmDelete = async () => {
-        const token = getSalesToken();
-        if (!token) return;
-
         try {
-            await deleteCustomer(customerId, token);
-        } catch (err) {
-            console.error('Failed to delete customer:', err);
-        } finally {
+            await deleteCustomer({ variables: { id: String(customerId) } });
+            alert({ text: `${customerName} deleted successfully`, type: 'success' });
             setDangerModalOpen(false);
-            if (onDelete) {
-                onDelete();
-            }
+            onDelete?.();
+        } catch (err) {
+            alert({ text: err instanceof Error ? err.message : 'Failed to delete customer', type: 'error' });
+            setDangerModalOpen(false);
         }
     };
 
