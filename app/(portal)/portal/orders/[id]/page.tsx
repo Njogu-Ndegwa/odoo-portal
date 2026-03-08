@@ -336,6 +336,8 @@ function StepQuotation({ order }: { order: OrderEntity }) {
             sku: p.sku ?? '',
             puCategory: p.puCategory?.toLowerCase() ?? 'physical',
             puMetric: p.puMetric ?? 'Piece',
+            serviceType: p.serviceType ?? null,
+            contractType: p.contractType ?? null,
             description: p.descriptionSale ?? p.description ?? '',
             durationMonths: null,
             priceUnit: p.listPrice ?? 0,
