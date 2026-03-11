@@ -22,7 +22,7 @@ function OrderActions({ row, onDelete }: ActionProps) {
   const canDelete = isDraft
 
   const handleEdit = () => {
-    router.push(`/portal/orders/${orderId}/edit`)
+    router.push(`/portal/orders/${orderId}`)
   }
 
   const handleDelete = () => {

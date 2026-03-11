@@ -27,6 +27,9 @@ interface ComboboxSearchProps<T> {
   keepOpenOnSelect?: boolean
   onOpenChange?: (isOpen: boolean) => void
   align?: 'left' | 'right'
+  onLoadMore?: () => void
+  hasMore?: boolean
+  isLoadingMore?: boolean
 }
 
 const DEFAULT_TRIGGER =
@@ -49,12 +52,17 @@ export default function ComboboxSearch<T extends { id: any }>({
   keepOpenOnSelect = false,
   onOpenChange,
   align = 'left',
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false,
 }: ComboboxSearchProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const [highlightIndex, setHighlightIndex] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+  const sentinelRef = useRef<HTMLLIElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const updateOpen = useCallback(
     (open: boolean) => {
@@ -96,6 +104,26 @@ export default function ComboboxSearch<T extends { id: any }>({
       el?.scrollIntoView({ block: 'nearest' })
     }
   }, [highlightIndex])
+
+  useEffect(() => {
+    if (!isOpen || !hasMore || !onLoadMore) return
+
+    const sentinel = sentinelRef.current
+    const scrollContainer = scrollContainerRef.current
+    if (!sentinel || !scrollContainer) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isLoadingMore) {
+          onLoadMore()
+        }
+      },
+      { root: scrollContainer, rootMargin: '0px 0px 80px 0px', threshold: 0.1 }
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [isOpen, hasMore, onLoadMore, isLoadingMore, items])
 
   const handleSelect = useCallback(
     (item: T) => {
@@ -179,7 +207,7 @@ export default function ComboboxSearch<T extends { id: any }>({
           </div>
 
           {/* Items */}
-          <div className="max-h-64 overflow-y-auto">
+          <div ref={scrollContainerRef} className="max-h-64 overflow-y-auto">
             {items.length > 0 ? (
               <ul ref={listRef} className="py-1">
                 {items.map((item, i) => (
@@ -201,6 +229,19 @@ export default function ComboboxSearch<T extends { id: any }>({
                     </button>
                   </li>
                 ))}
+                {hasMore && (
+                  <li
+                    ref={sentinelRef}
+                    className="px-3 py-2 text-xs text-center text-gray-400 dark:text-gray-500"
+                  >
+                    {isLoadingMore && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Loading more…
+                      </span>
+                    )}
+                  </li>
+                )}
               </ul>
             ) : isLoading ? (
               <div className="px-3 py-6 text-sm text-center text-gray-400 dark:text-gray-500">

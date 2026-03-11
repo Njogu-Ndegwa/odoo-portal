@@ -174,72 +174,74 @@ export const ORDERS_QUERY = gql`
 export const ORDER_QUERY = gql`
   query Order($id: Int!) {
     order(id: $id) {
-      id
-      name
-      state
-      approvalStatus
-      paymentStatus
-      partnerId
-      partnerName
-      partnerEmail
-      partnerPhone
-      contactPerson
-      clientOrderRef
-      channelPartner
-      salesRepName
-      salesOutlet
-      amountUntaxed
-      amountTax
-      amountTotal
-      paidAmount
-      remainingAmount
-      invoiceCount
-      lines {
-        id
-        productId
-        productName
-        sku
-        puCategory
-        puMetric
-        serviceType
-        contractType
-        description
-        quantity
-        priceUnit
-        priceSubtotal
-        durationMonths
-      }
-      invoices {
+      order {
         id
         name
         state
+        approvalStatus
+        paymentStatus
+        partnerId
+        partnerName
+        partnerEmail
+        partnerPhone
+        contactPerson
+        clientOrderRef
+        channelPartner
+        salesRepName
+        salesOutlet
+        amountUntaxed
+        amountTax
         amountTotal
-        amountResidual
+        paidAmount
+        remainingAmount
+        invoiceCount
+        lines {
+          id
+          productId
+          productName
+          sku
+          puCategory
+          puMetric
+          serviceType
+          contractType
+          description
+          quantity
+          priceUnit
+          priceSubtotal
+          durationMonths
+        }
+        invoices {
+          id
+          name
+          state
+          amountTotal
+          amountResidual
+          createdAt
+        }
+        payments {
+          id
+          amount
+          paymentDate
+          memo
+          paymentMethod
+          transactionRef
+        }
+        approval {
+          submittedBy
+          submittedAt
+          approvedBy
+          approvedAt
+          notes
+        }
+        timeline {
+          title
+          meta
+          description
+          color
+        }
         createdAt
+        updatedAt
       }
-      payments {
-        id
-        amount
-        paymentDate
-        memo
-        paymentMethod
-        transactionRef
-      }
-      approval {
-        submittedBy
-        submittedAt
-        approvedBy
-        approvedAt
-        notes
-      }
-      timeline {
-        title
-        meta
-        description
-        color
-      }
-      createdAt
-      updatedAt
     }
   }
 `;

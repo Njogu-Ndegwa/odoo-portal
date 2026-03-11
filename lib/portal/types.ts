@@ -337,18 +337,19 @@ export interface OrdersFilterInput {
 
 // Order mutation inputs
 export interface CreateOrderInput {
-  partnerId: number;
+  customerId: number;
   clientOrderRef?: string | null;
   channelPartner?: string | null;
   salesRepName?: string | null;
   salesOutlet?: string | null;
-  lines: CreateOrderLineInput[];
+  products: CreateOrderLineInput[];
 }
 
 export interface CreateOrderLineInput {
   productId: number;
   quantity: number;
   priceUnit: number;
+  description?: string;
 }
 
 export interface UpdateOrderLinesInput {

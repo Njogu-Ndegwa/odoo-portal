@@ -1,20 +1,91 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useQuery, useMutation } from '@apollo/client'
 import Link from 'next/link'
-import { Plus, X, Users, Package } from 'lucide-react'
+import { Plus, X, Users, Package, CheckCircle2, Loader2 } from 'lucide-react'
+import StepPipeline from '@/components/step-pipeline'
 import ComboboxSearch from '@/components/combobox-search'
 import { useAlert } from '@/app/contexts/alertContext'
-import { CUSTOMERS_QUERY, PRODUCT_UNITS_QUERY, CREATE_ORDER_MUTATION } from '@/lib/portal/queries'
+import { getContacts, getProducts, type OdooContact, type OdooProduct, type ContactsListApiResponse, type ProductsListApiResponse } from '@/lib/odoo-api'
+import { getSalesToken } from '@/lib/odoo-auth'
+import {
+  createQuotation,
+  getOrder as fetchOrderDetail,
+  sendOrder as restSendOrder,
+  confirmOrder as restConfirmOrder,
+  requestApproval as restRequestApproval,
+  approveOrder as restApproveOrder,
+  rejectOrder as restRejectOrder,
+  registerPayment as restRegisterPayment,
+  getProformaPdf,
+  sendProformaPdf,
+} from '@/lib/portal/order-api'
 import { formatCurrency } from '@/lib/portal/mock-orders'
+import { PIPELINE_STEPS, getOrderStepIndex, STEP_ACTIONS } from '@/lib/portal/order-constants'
+import { StepRevise, StepApproval, StepPayment, StepInvoice } from '@/components/order-steps'
+import { CategoryBadge, CustomerInfoRow, CustomerInfoRowSkeleton, StepContentSkeleton } from '@/components/order-shared'
 import type {
-  CustomersListResponse,
-  ProductUnitsListResponse,
   CustomerEntity,
   ProductUnitEntity,
+  OrderEntity,
 } from '@/lib/portal/types'
+
+// ============================================================================
+// Mappers: REST snake_case -> app camelCase entities
+// ============================================================================
+
+function mapContact(c: OdooContact): CustomerEntity {
+  return {
+    id: String(c.id),
+    name: c.name,
+    email: c.email || null,
+    phone: c.phone || null,
+    mobile: c.mobile || null,
+    street: c.street || null,
+    city: c.city || null,
+    zip: c.zip || null,
+    isCompany: c.is_company,
+    companyId: c.company_id ?? null,
+    companyName: c.company_name ?? null,
+    countryName: c.country_name ?? null,
+    assignedEmployeeId: c.assigned_employee_id ?? null,
+    assignedEmployeeName: c.assigned_employee_name ?? null,
+    createdAt: c.create_date ?? null,
+    updatedAt: c.write_date ?? null,
+  }
+}
+
+function mapProduct(p: OdooProduct): ProductUnitEntity {
+  const pid = p.product_id ?? p.id
+  return {
+    id: String(pid),
+    name: p.name,
+    sku: p.default_code || null,
+    listPrice: p.list_price ?? null,
+    type: p.type ?? null,
+    puCategory: p.pu_category || null,
+    puMetric: p.pu_metric || null,
+    serviceType: p.service_type || null,
+    contractType: p.contract_type || null,
+    categoryName: p.category_name || null,
+    companyId: Array.isArray(p.company_id) ? p.company_id[0] : null,
+    companyName: Array.isArray(p.company_id) ? p.company_id[1] : null,
+    currencyName: p.currency ?? null,
+    recurringInvoice: p.recurring_invoice ?? null,
+    saleOk: p.sale_ok ?? null,
+    active: p.active ?? true,
+    imageUrl: p.image_url ?? null,
+    description: p.description || null,
+    descriptionSale: p.description_sale || null,
+    createdAt: p.create_date ?? null,
+    updatedAt: p.write_date ?? null,
+  }
+}
+
+// ============================================================================
+// Local types
+// ============================================================================
 
 interface OrderLine {
   tempId: string
@@ -29,27 +100,43 @@ interface OrderLine {
   quantity: number
 }
 
-const VAT_RATE = 0.16
+const DROPDOWN_PAGE_SIZE = 10
 
 export default function CreateOrderPage() {
   const router = useRouter()
   const { alert } = useAlert()
 
+  // ── Post-creation workflow state ──
+  const [createdOrder, setCreatedOrder] = useState<OrderEntity | null>(null)
+  const [activeStep, setActiveStep] = useState(0)
+  const [backendStep, setBackendStep] = useState(0)
+  const [orderLoading, setOrderLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  // ── Create-mode form state ──
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerEntity | null>(null)
   const [lines, setLines] = useState<OrderLine[]>([])
-  const [clientOrderRef, setClientOrderRef] = useState('')
-  const [channelPartner, setChannelPartner] = useState('')
-  const [salesOutlet, setSalesOutlet] = useState('')
+  const [creating, setCreating] = useState(false)
 
-  // Customer search
+  // ── Customer combobox with infinite scroll ──
   const [customerDropdownOpen, setCustomerDropdownOpen] = useState(false)
   const [customerSearch, setCustomerSearch] = useState('')
   const [debouncedCustomerSearch, setDebouncedCustomerSearch] = useState('')
+  const [customerPage, setCustomerPage] = useState(1)
+  const [accumulatedCustomers, setAccumulatedCustomers] = useState<CustomerEntity[]>([])
+  const [customersLoading, setCustomersLoading] = useState(false)
+  const [customerHasMore, setCustomerHasMore] = useState(false)
+  const prevCustomerSearchRef = useRef(debouncedCustomerSearch)
 
-  // Product search
+  // ── Product combobox with infinite scroll ──
   const [productDropdownOpen, setProductDropdownOpen] = useState(false)
   const [productSearch, setProductSearch] = useState('')
   const [debouncedProductSearch, setDebouncedProductSearch] = useState('')
+  const [productPage, setProductPage] = useState(1)
+  const [accumulatedProducts, setAccumulatedProducts] = useState<ProductUnitEntity[]>([])
+  const [productsLoading, setProductsLoading] = useState(false)
+  const [productHasMore, setProductHasMore] = useState(false)
+  const prevProductSearchRef = useRef(debouncedProductSearch)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedCustomerSearch(customerSearch), 300)
@@ -61,24 +148,107 @@ export default function CreateOrderPage() {
     return () => clearTimeout(t)
   }, [productSearch])
 
-  const { data: customersData, loading: customersLoading } = useQuery<CustomersListResponse>(
-    CUSTOMERS_QUERY,
-    {
-      variables: { filters: { search: debouncedCustomerSearch || undefined, limit: 5 } },
-      skip: !customerDropdownOpen,
+  useEffect(() => {
+    if (prevCustomerSearchRef.current !== debouncedCustomerSearch) {
+      setCustomerPage(1)
+      setAccumulatedCustomers([])
+      prevCustomerSearchRef.current = debouncedCustomerSearch
     }
-  )
+  }, [debouncedCustomerSearch])
 
-  const { data: productsData, loading: productsLoading } = useQuery<ProductUnitsListResponse>(
-    PRODUCT_UNITS_QUERY,
-    {
-      variables: { filters: { search: debouncedProductSearch || undefined, limit: 5, active: true } },
-      skip: !productDropdownOpen,
+  useEffect(() => {
+    if (prevProductSearchRef.current !== debouncedProductSearch) {
+      setProductPage(1)
+      setAccumulatedProducts([])
+      prevProductSearchRef.current = debouncedProductSearch
     }
-  )
+  }, [debouncedProductSearch])
 
-  const customers = customersData?.customers.data ?? []
-  const products = productsData?.productUnits.data ?? []
+  const handleCustomerOpenChange = useCallback((open: boolean) => {
+    setCustomerDropdownOpen(open)
+    if (!open) {
+      setCustomerPage(1)
+      setAccumulatedCustomers([])
+    }
+  }, [])
+
+  const handleProductOpenChange = useCallback((open: boolean) => {
+    setProductDropdownOpen(open)
+    if (!open) {
+      setProductPage(1)
+      setAccumulatedProducts([])
+    }
+  }, [])
+
+  // ── Fetch customers via REST ──
+  useEffect(() => {
+    if (!customerDropdownOpen || !!createdOrder) return
+    let cancelled = false
+    const fetchData = async () => {
+      setCustomersLoading(true)
+      try {
+        const token = getSalesToken()
+        const result: ContactsListApiResponse = await getContacts(
+          { q: debouncedCustomerSearch || undefined, page: customerPage, limit: DROPDOWN_PAGE_SIZE },
+          token || undefined,
+        )
+        if (cancelled) return
+        const mapped = result.contacts.map(mapContact)
+        setAccumulatedCustomers((prev) => customerPage === 1 ? mapped : [...prev, ...mapped])
+        setCustomerHasMore(result.pagination.has_next_page)
+      } catch {
+        if (!cancelled) setCustomerHasMore(false)
+      } finally {
+        if (!cancelled) setCustomersLoading(false)
+      }
+    }
+    fetchData()
+    return () => { cancelled = true }
+  }, [customerDropdownOpen, debouncedCustomerSearch, customerPage, createdOrder])
+
+  // ── Fetch products via REST ──
+  useEffect(() => {
+    if (!productDropdownOpen || !!createdOrder) return
+    let cancelled = false
+    const fetchData = async () => {
+      setProductsLoading(true)
+      try {
+        const token = getSalesToken()
+        const result: ProductsListApiResponse = await getProducts(
+          { search: debouncedProductSearch || undefined, page: productPage, limit: DROPDOWN_PAGE_SIZE, active: true },
+          token || undefined,
+        )
+        if (cancelled) return
+        const mapped = result.products.map(mapProduct)
+        setAccumulatedProducts((prev) => productPage === 1 ? mapped : [...prev, ...mapped])
+        setProductHasMore(result.pagination.has_next_page)
+      } catch {
+        if (!cancelled) setProductHasMore(false)
+      } finally {
+        if (!cancelled) setProductsLoading(false)
+      }
+    }
+    fetchData()
+    return () => { cancelled = true }
+  }, [productDropdownOpen, debouncedProductSearch, productPage, createdOrder])
+
+  const customerLoadingMore = customersLoading && customerPage > 1
+  const customerLoadingInitial = customersLoading && customerPage === 1
+
+  const productLoadingMore = productsLoading && productPage > 1
+  const productLoadingInitial = productsLoading && productPage === 1
+
+  const handleCustomerLoadMore = useCallback(() => {
+    if (!customersLoading && customerHasMore) {
+      setCustomerPage((p) => p + 1)
+    }
+  }, [customersLoading, customerHasMore])
+
+  const handleProductLoadMore = useCallback(() => {
+    if (!productsLoading && productHasMore) {
+      setProductPage((p) => p + 1)
+    }
+  }, [productsLoading, productHasMore])
 
   const physicalLines = lines.filter((l) => l.puCategory === 'physical')
   const contractLines = lines.filter((l) => l.puCategory !== 'physical')
@@ -87,9 +257,8 @@ export default function CreateOrderPage() {
     const physicalSubtotal = physicalLines.reduce((s, l) => s + l.priceUnit * l.quantity, 0)
     const contractSubtotal = contractLines.reduce((s, l) => s + l.priceUnit * l.quantity, 0)
     const subtotal = physicalSubtotal + contractSubtotal
-    const tax = subtotal * VAT_RATE
-    const total = subtotal + tax
-    return { physicalSubtotal, contractSubtotal, subtotal, tax, total }
+    const total = subtotal
+    return { physicalSubtotal, contractSubtotal, subtotal, total }
   }, [physicalLines, contractLines])
 
   const handleSelectCustomer = useCallback((c: CustomerEntity) => {
@@ -140,8 +309,6 @@ export default function CreateOrderPage() {
     )
   }
 
-  const [createOrder, { loading: creating }] = useMutation(CREATE_ORDER_MUTATION)
-
   const handleSubmit = async () => {
     if (!selectedCustomer) {
       alert({ text: 'Please select a customer.', type: 'error' })
@@ -152,115 +319,356 @@ export default function CreateOrderPage() {
       return
     }
 
+    setCreating(true)
     try {
-      const { data } = await createOrder({
-        variables: {
-          input: {
-            partnerId: Number(selectedCustomer.id),
-            clientOrderRef: clientOrderRef || undefined,
-            lines: lines.map((l) => ({
-              productId: l.productId,
-              quantity: l.quantity,
-              priceUnit: l.priceUnit,
-            })),
-          },
-        },
+      const quotationResult = await createQuotation({
+        customer_id: Number(selectedCustomer.id),
+        products: lines.map((l) => ({
+          product_id: l.productId,
+          quantity: l.quantity,
+          price_unit: l.priceUnit,
+          description: l.description ?? undefined,
+        })),
       })
 
-      const result = data?.createOrder
-      if (result?.success && result?.order?.id) {
-        alert({ text: 'Quotation created successfully.', type: 'success' })
-        router.push(`/portal/orders/${result.order.id}`)
-      } else {
-        alert({ text: result?.message ?? 'Failed to create order.', type: 'error' })
+      if (!quotationResult.success || !quotationResult.order?.id) {
+        alert({ text: quotationResult.message ?? 'Failed to create quotation.', type: 'error' })
+        setCreating(false)
+        return
       }
+
+      const orderId = Number(quotationResult.order.id)
+
+      alert({ text: 'Quotation created successfully.', type: 'success' })
+
+      // Immediately transition to workflow view using creation response data
+      setCreatedOrder(quotationResult.order)
+      setBackendStep(1)
+      setActiveStep(1)
+      setCreating(false)
+      window.history.replaceState(null, '', `/portal/orders/${orderId}`)
+
+      // Fire send in the background — don't let it block the detail fetch
+      setOrderLoading(true)
+      const sendPromise = restSendOrder(orderId).catch(() => {})
+
+      try {
+        const freshOrder = await fetchOrderDetail(orderId)
+        const step = Math.max(1, getOrderStepIndex(freshOrder))
+        setCreatedOrder(freshOrder)
+        setBackendStep(step)
+        setActiveStep(step)
+      } catch {
+        /* keep initial order data on failure */
+      } finally {
+        setOrderLoading(false)
+      }
+
+      // Once send completes, silently refresh to pick up post-send state
+      sendPromise.then(async () => {
+        try {
+          const postSendOrder = await fetchOrderDetail(orderId)
+          const postStep = Math.max(1, getOrderStepIndex(postSendOrder))
+          setCreatedOrder(postSendOrder)
+          setBackendStep(postStep)
+          setActiveStep(postStep)
+        } catch {}
+      })
     } catch (err: any) {
       alert({ text: err?.message ?? 'Failed to create order.', type: 'error' })
+      setCreating(false)
     }
   }
 
-  const renderLineRows = (lineGroup: OrderLine[], categoryLabel: string, badgeClass: string) => {
-    if (lineGroup.length === 0) return null
+  // ── Post-creation: REST mutation helpers ──
+
+  const orderId = createdOrder ? Number(createdOrder.id) : null
+
+  const refreshOrder = useCallback(async (minStep?: number) => {
+    if (!orderId) return
+    try {
+      const fresh = await fetchOrderDetail(orderId)
+      setCreatedOrder(fresh)
+      const step = Math.max(minStep ?? 1, getOrderStepIndex(fresh))
+      setBackendStep(step)
+      setActiveStep(step)
+    } catch { /* keep local state */ }
+  }, [orderId])
+
+  const handleRestAction = useCallback(
+    async (actionFn: () => Promise<any>, successMsg: string, minStep?: number) => {
+      setActionLoading(true)
+      try {
+        await actionFn()
+        alert({ text: successMsg, type: 'success' })
+        await refreshOrder(minStep)
+      } catch (err: any) {
+        alert({ text: err?.message ?? 'Operation failed', type: 'error' })
+      } finally {
+        setActionLoading(false)
+      }
+    },
+    [alert, refreshOrder],
+  )
+
+  const handleConfirm = useCallback(() => {
+    if (!orderId) return
+    return handleRestAction(
+      async () => {
+        await restConfirmOrder(orderId)
+        await restRequestApproval(orderId)
+      },
+      'Order confirmed & submitted for approval.',
+      2,
+    )
+  }, [handleRestAction, orderId])
+
+  const handleRequestApproval = useCallback(() => {
+    if (!orderId) return
+    return handleRestAction(() => restRequestApproval(orderId), 'Approval request submitted.', 3)
+  }, [handleRestAction, orderId])
+
+  const handleApprove = useCallback(
+    (notes: string) => {
+      if (!orderId) return
+      return handleRestAction(() => restApproveOrder(orderId, notes), 'Order approved.')
+    },
+    [handleRestAction, orderId],
+  )
+
+  const handleReject = useCallback(
+    (notes: string) => {
+      if (!orderId) return
+      return handleRestAction(() => restRejectOrder(orderId, notes), 'Order rejected.')
+    },
+    [handleRestAction, orderId],
+  )
+
+  const handleRegisterPayment = useCallback(
+    async (amount: number, paymentDate: string, memo: string) => {
+      if (!orderId) return
+      setActionLoading(true)
+      try {
+        const result = await restRegisterPayment(orderId, amount, memo)
+        alert({ text: 'Payment registered.', type: 'success' })
+
+        let updated: OrderEntity
+        try {
+          const fresh = await fetchOrderDetail(orderId)
+          updated = fresh
+        } catch {
+          updated = { ...createdOrder! }
+        }
+
+        const newPayment = result.payment ?? {
+          id: String(Date.now()),
+          amount,
+          paymentDate,
+          memo: memo || null,
+          paymentMethod: null,
+          transactionRef: null,
+        }
+        const alreadyIncluded = updated.payments.some(
+          (p) => p.amount === newPayment.amount && p.paymentDate === newPayment.paymentDate,
+        )
+        if (!alreadyIncluded) {
+          updated.payments = [...updated.payments, newPayment]
+        }
+
+        if (result.orderPaymentStatus) {
+          updated.paymentStatus = result.orderPaymentStatus
+        }
+        if (result.paidAmount != null) updated.paidAmount = result.paidAmount
+        if (result.remainingAmount != null) updated.remainingAmount = result.remainingAmount
+
+        setCreatedOrder(updated)
+        const computed = getOrderStepIndex(updated)
+        setBackendStep(computed)
+        setActiveStep(computed)
+      } catch (err: any) {
+        alert({ text: err?.message ?? 'Operation failed', type: 'error' })
+      } finally {
+        setActionLoading(false)
+      }
+    },
+    [orderId, alert, createdOrder],
+  )
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!orderId) return
+    try {
+      const pdf = await getProformaPdf(orderId)
+      if (pdf?.base64) {
+        const link = document.createElement('a')
+        link.href = `data:${pdf.contentType};base64,${pdf.base64}`
+        link.download = pdf.filename
+        link.click()
+      }
+    } catch (err: any) {
+      alert({ text: err?.message ?? 'Failed to download PDF', type: 'error' })
+    }
+  }, [orderId, alert])
+
+  const handleSendProforma = useCallback(async () => {
+    if (!orderId) return
+    const res = await sendProformaPdf(orderId)
+    if (!res.success) throw new Error(res.message ?? 'Failed to send proforma')
+    alert({ text: 'Proforma invoice sent to customer.', type: 'success' })
+  }, [orderId, alert])
+
+  const handleStepAction = useCallback(
+    async () => {
+      switch (backendStep) {
+        case 1:
+          await handleConfirm()
+          break
+        default:
+          await refreshOrder()
+          break
+      }
+    },
+    [backendStep, handleConfirm, handleRequestApproval, refreshOrder],
+  )
+
+  const isViewingPastStep = createdOrder ? activeStep < backendStep : false
+
+  // ── Workflow mode (after creation) ──
+  if (createdOrder) {
+    const stateLabel: Record<string, { label: string; cls: string }> = {
+      draft: { label: 'Draft', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' },
+      sent: { label: 'Sent', cls: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' },
+      sale: { label: 'Confirmed', cls: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' },
+      done: { label: 'Done', cls: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300' },
+      cancel: { label: 'Cancelled', cls: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' },
+    }
+    const st = stateLabel[createdOrder.state] ?? stateLabel.draft
+
+    const renderActiveStep = () => {
+      switch (activeStep) {
+        case 1: return <StepRevise order={createdOrder} onConfirm={handleConfirm} readOnly={isViewingPastStep} />
+        case 2: return <StepApproval order={createdOrder} onRequestApproval={handleRequestApproval} onApprove={handleApprove} onReject={handleReject} onDownloadPdf={handleDownloadPdf} onSendProforma={handleSendProforma} />
+        case 3: return <StepPayment order={createdOrder} onRegisterPayment={handleRegisterPayment} />
+        case 4: return <StepInvoice order={createdOrder} />
+        default: return null
+      }
+    }
+
+    const sa = STEP_ACTIONS[activeStep]
+    const needsFullPayment = activeStep === 3 && createdOrder.paymentStatus !== 'paid'
+    const nextDisabled = actionLoading || needsFullPayment
+
     return (
-      <>
-        <tr>
-          <td
-            colSpan={8}
-            className="bg-gray-50 dark:bg-gray-700/40 px-4 py-2 border-b border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass}`}>
-                {categoryLabel}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                {categoryLabel === 'Physical' ? 'Tangible Assets' : 'Entitlements & Obligations'}
-              </span>
-              <span className="text-gray-400 dark:text-gray-500 font-normal normal-case">
-                — {lineGroup.length} item{lineGroup.length > 1 ? 's' : ''}
-              </span>
-            </div>
-          </td>
-        </tr>
-        {lineGroup.map((line) => (
-          <tr key={line.tempId} className="border-b border-gray-100 dark:border-gray-700/60">
-            <td className="px-4 py-3 text-sm text-gray-400">
-              {lines.indexOf(line) + 1}
-            </td>
-            <td className="px-4 py-3">
-              <div className="font-medium text-sm text-gray-800 dark:text-gray-100">
-                {line.productName}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {line.sku}{line.description ? ` · ${line.description}` : ''}
-              </div>
-            </td>
-            <td className="px-4 py-3">
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass}`}>
-                {categoryLabel}
-              </span>
-            </td>
-            <td className="px-4 py-3 text-sm tabular-nums text-gray-600 dark:text-gray-300">
-              {line.puMetric}
-              {line.durationMonths && (
-                <div className="text-xs text-gray-400">{line.durationMonths} Months</div>
-              )}
-            </td>
-            <td className="px-4 py-3 text-right">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={line.priceUnit}
-                onChange={(e) => handleLineChange(line.tempId, 'priceUnit', parseFloat(e.target.value) || 0)}
-                className="form-input w-24 text-right text-sm tabular-nums py-1"
-              />
-            </td>
-            <td className="px-4 py-3 text-right">
-              <input
-                type="number"
-                min="1"
-                value={line.quantity}
-                onChange={(e) => handleLineChange(line.tempId, 'quantity', parseInt(e.target.value) || 1)}
-                className="form-input w-16 text-right text-sm tabular-nums py-1"
-              />
-            </td>
-            <td className="px-4 py-3 text-right font-semibold text-sm tabular-nums text-gray-800 dark:text-gray-100">
-              {formatCurrency(line.priceUnit * line.quantity)}
-            </td>
-            <td className="px-4 py-3 text-center">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
+        <nav className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <Link href="/portal" className="hover:text-violet-500">Portal</Link>
+          <span className="mx-2">/</span>
+          <Link href="/portal/orders" className="hover:text-violet-500">Orders</Link>
+          <span className="mx-2">/</span>
+          <span className="text-gray-800 dark:text-gray-100 font-medium">{createdOrder.name}</span>
+        </nav>
+
+        <div className="sm:flex sm:justify-between sm:items-center mb-5">
+          <div>
+            <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
+              {PIPELINE_STEPS[activeStep]?.label ?? 'Order'}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {createdOrder.partnerName} · {createdOrder.name}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mt-3 sm:mt-0">
+            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${st.cls}`}>
+              {st.label}
+            </span>
+            <span className="text-xs tabular-nums text-gray-500 dark:text-gray-400">{createdOrder.name}</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 px-5 pt-5 pb-2 mb-6">
+          <StepPipeline
+            steps={PIPELINE_STEPS}
+            currentStep={activeStep}
+            maxStep={backendStep}
+            onStepClick={(i) => { if (i > 0) setActiveStep(i) }}
+          />
+        </div>
+
+        <div className="animate-in fade-in duration-200">
+          {orderLoading ? <StepContentSkeleton rowCount={lines.length || 3} /> : renderActiveStep()}
+        </div>
+
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-700/60">
+          <div>
+            {activeStep > 1 && (
               <button
-                type="button"
-                onClick={() => handleRemoveLine(line.tempId)}
-                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                className="btn border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300"
+                onClick={() => setActiveStep(Math.max(1, activeStep - 1))}
               >
-                <X className="w-4 h-4" />
+                &larr; {PIPELINE_STEPS[activeStep - 1]?.label || 'Back'}
               </button>
-            </td>
-          </tr>
-        ))}
-      </>
+            )}
+          </div>
+          <div>
+            {isViewingPastStep ? (
+              <button
+                className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+                onClick={() => setActiveStep(activeStep + 1)}
+              >
+                {PIPELINE_STEPS[activeStep + 1]?.label ?? 'Next'} &rarr;
+              </button>
+            ) : activeStep < 4 && sa.nextLabel ? (
+              <div className="flex items-center gap-3">
+                {needsFullPayment && (
+                  <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">Full payment required</span>
+                )}
+                <button
+                  className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleStepAction}
+                  disabled={nextDisabled}
+                >
+                  {actionLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Processing&hellip;</>
+                  ) : (
+                    <>{sa.nextLabel} &rarr;</>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <button
+                className="btn bg-green-600 text-white hover:bg-green-700"
+                onClick={() => {
+                  alert({ text: 'Order complete!', type: 'success' })
+                  router.push('/portal/orders')
+                }}
+              >
+                <CheckCircle2 className="w-4 h-4" /> {sa.nextLabel}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     )
   }
+
+  // ── Create mode (before creation) ──
+
+  const renderComboboxCustomerItem = (c: CustomerEntity) => (
+    <div className="flex items-center gap-3 w-full">
+      <div className="flex-1 min-w-0">
+        <span className="font-medium text-gray-800 dark:text-gray-100">{c.name}</span>
+        <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+          <span className="truncate">{c.email || 'No email'}</span>
+          <span className={`shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+            c.isCompany
+              ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
+              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+          }`}>
+            {c.isCompany ? 'Company' : 'Individual'}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
@@ -275,193 +683,88 @@ export default function CreateOrderPage() {
 
       {/* Header */}
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
-        <div>
+        <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
             Create Quotation
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Select a customer and add product-unit lines
-          </p>
         </div>
-        <div className="flex items-center gap-2 mt-3 sm:mt-0">
-          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+        <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
+          <span className="btn border-gray-200 dark:border-gray-700/60 text-gray-500 dark:text-gray-400 cursor-default">
             Draft
           </span>
         </div>
       </div>
 
-      {/* Customer card */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 mb-4">
-        <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <Users className="w-4 h-4 text-gray-400" />
-            Customer & Channel Attribution
-          </h2>
-          <ComboboxSearch<CustomerEntity>
-            triggerLabel={selectedCustomer ? 'Change Customer' : 'Select Customer'}
-            triggerIcon={<Users className="w-4 h-4" />}
-            searchPlaceholder="Search by name or email…"
-            value={customerSearch}
-            onChange={setCustomerSearch}
-            items={customers}
-            isLoading={customersLoading}
-            emptyMessage="No customers found"
-            onSelect={handleSelectCustomer}
-            onOpenChange={setCustomerDropdownOpen}
-            align="right"
-            dropdownClassName="w-80"
-            renderItem={(c) => (
-              <div className="flex items-center gap-3 w-full">
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium text-gray-800 dark:text-gray-100">{c.name}</span>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    <span className="truncate">{c.email || 'No email'}</span>
-                    <span className={`shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                      c.isCompany
-                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
-                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                    }`}>
-                      {c.isCompany ? 'Company' : 'Individual'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          />
-        </header>
-        <div className="p-5">
-          {selectedCustomer ? (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 mb-4">
-                <div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Customer</div>
-                  <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">{selectedCustomer.name}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Email</div>
-                  <div className="text-sm text-gray-800 dark:text-gray-100">{selectedCustomer.email || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Phone</div>
-                  <div className="text-sm text-gray-800 dark:text-gray-100">{selectedCustomer.phone || selectedCustomer.mobile || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Type</div>
-                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
-                    selectedCustomer.isCompany
-                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                  }`}>
-                    {selectedCustomer.isCompany ? 'Company' : 'Individual'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 dark:border-gray-700/60 pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Channel Attribution
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleClearCustomer}
-                    className="text-xs text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
-                  >
-                    Clear customer
-                  </button>
-                </div>
-                <div className="grid gap-5 md:grid-cols-3">
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400" htmlFor="channelPartner">
-                      Channel Partner
-                    </label>
-                    <input
-                      id="channelPartner"
-                      className="form-input w-full text-sm"
-                      type="text"
-                      value={channelPartner}
-                      onChange={(e) => setChannelPartner(e.target.value)}
-                      placeholder="e.g. GreenRide Dealers"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400" htmlFor="clientOrderRef">
-                      Customer PO Reference
-                    </label>
-                    <input
-                      id="clientOrderRef"
-                      className="form-input w-full text-sm"
-                      type="text"
-                      value={clientOrderRef}
-                      onChange={(e) => setClientOrderRef(e.target.value)}
-                      placeholder="e.g. PO-2026-001"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400" htmlFor="salesOutlet">
-                      Sales Outlet
-                    </label>
-                    <input
-                      id="salesOutlet"
-                      className="form-input w-full text-sm"
-                      type="text"
-                      value={salesOutlet}
-                      onChange={(e) => setSalesOutlet(e.target.value)}
-                      placeholder="e.g. Westlands Hub"
-                    />
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Skeleton placeholder */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 min-w-0">
-                  <div className="h-4 w-44 rounded bg-gray-100 dark:bg-gray-700/50" />
-                  <div className="h-3 w-32 rounded bg-gray-100 dark:bg-gray-700/50 mt-1.5" />
-                </div>
-              </div>
-
-              <div className="border-t border-gray-100 dark:border-gray-700/60 pt-4">
-                <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-                  Channel Attribution
-                </div>
-                <div className="grid gap-5 md:grid-cols-3">
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-500">
-                      Channel Partner
-                    </label>
-                    <div className="h-9 rounded-lg bg-gray-50 dark:bg-gray-700/30 border border-dashed border-gray-200 dark:border-gray-700/60" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-500">
-                      Customer PO Reference
-                    </label>
-                    <div className="h-9 rounded-lg bg-gray-50 dark:bg-gray-700/30 border border-dashed border-gray-200 dark:border-gray-700/60" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-500">
-                      Sales Outlet
-                    </label>
-                    <div className="h-9 rounded-lg bg-gray-50 dark:bg-gray-700/30 border border-dashed border-gray-200 dark:border-gray-700/60" />
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 text-center">
-                Click <strong>Select Customer</strong> to get started
-              </p>
-            </>
-          )}
-        </div>
+      {/* Pipeline */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 px-5 pt-5 pb-2 mb-6">
+        <StepPipeline steps={PIPELINE_STEPS} currentStep={0} />
       </div>
 
-      {/* Lines card */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 mb-4">
-        <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+      {/* Single form card */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60">
+
+        {/* Customer section */}
+        <div className="border-b border-gray-100 dark:border-gray-700/60">
+          <header className="px-5 py-3 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/40">
+                <Users className="w-4 h-4 text-violet-600 dark:text-violet-300" />
+              </div>
+              Customer
+            </h2>
+            <ComboboxSearch<CustomerEntity>
+              triggerLabel={selectedCustomer ? 'Change Customer' : 'Select Customer'}
+              triggerIcon={<Users className="w-4 h-4" />}
+              triggerClassName="btn text-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300 min-w-[10rem] justify-center"
+              searchPlaceholder="Search by name or email…"
+              value={customerSearch}
+              onChange={setCustomerSearch}
+              items={accumulatedCustomers}
+              isLoading={customerLoadingInitial}
+              emptyMessage="No customers found"
+              onSelect={handleSelectCustomer}
+              onOpenChange={handleCustomerOpenChange}
+              align="right"
+              dropdownClassName="w-80"
+              renderItem={renderComboboxCustomerItem}
+              onLoadMore={handleCustomerLoadMore}
+              hasMore={customerHasMore}
+              isLoadingMore={customerLoadingMore}
+            />
+          </header>
+
+          <div className="px-5 py-4">
+            {selectedCustomer ? (
+              <div className="flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <CustomerInfoRow
+                    name={selectedCustomer.name}
+                    email={selectedCustomer.email}
+                    phone={selectedCustomer.phone || selectedCustomer.mobile}
+                    isCompany={selectedCustomer.isCompany}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearCustomer}
+                  className="p-1.5 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:text-red-400/70 dark:hover:text-red-400 dark:hover:bg-red-900/20 transition-colors shrink-0"
+                  title="Clear customer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <CustomerInfoRowSkeleton />
+            )}
+          </div>
+        </div>
+
+        {/* Product lines section */}
+        <header className="px-5 py-3 bg-gray-50 dark:bg-gray-900/20 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
           <h2 className="font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <Package className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/40">
+              <Package className="w-4 h-4 text-violet-600 dark:text-violet-300" />
+            </div>
             Product-Unit Lines
             {lines.length > 0 && (
               <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">
@@ -473,16 +776,20 @@ export default function CreateOrderPage() {
           <ComboboxSearch<ProductUnitEntity>
             triggerLabel="Add PU Line"
             triggerIcon={<Plus className="w-4 h-4" />}
+            triggerClassName="btn text-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300 min-w-[10rem] justify-center"
             searchPlaceholder="Search products…"
             value={productSearch}
             onChange={setProductSearch}
-            items={products}
-            isLoading={productsLoading}
+            items={accumulatedProducts}
+            isLoading={productLoadingInitial}
             emptyMessage="No products found"
             onSelect={handleAddProduct}
-            onOpenChange={setProductDropdownOpen}
+            onOpenChange={handleProductOpenChange}
             align="right"
             dropdownClassName="w-96"
+            onLoadMore={handleProductLoadMore}
+            hasMore={productHasMore}
+            isLoadingMore={productLoadingMore}
             renderItem={(p) => (
               <div className="flex items-center gap-3 w-full">
                 <div className="flex-1 min-w-0">
@@ -512,30 +819,91 @@ export default function CreateOrderPage() {
 
         {lines.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-700/30">
-                  <th className="px-4 py-3 w-10">#</th>
-                  <th className="px-4 py-3">Product-Unit</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Metric</th>
-                  <th className="px-4 py-3 text-right">Unit Price</th>
-                  <th className="px-4 py-3 text-right">Qty</th>
-                  <th className="px-4 py-3 text-right">Subtotal</th>
-                  <th className="px-4 py-3 w-10"></th>
+            <table className="table-auto w-full dark:text-gray-300">
+              <thead className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-t border-b border-gray-100 dark:border-gray-700/60">
+                <tr>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
+                    <div className="font-semibold text-left">#</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-left">Product-Unit</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-left">Category</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-left">Metric</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-right">Unit Price</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-right">Qty</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-right">Subtotal</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
-              <tbody>
-                {renderLineRows(
-                  physicalLines,
-                  'Physical',
-                  'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-                )}
-                {renderLineRows(
-                  contractLines,
-                  'Contract',
-                  'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-                )}
+              <tbody className="text-sm divide-y divide-gray-100 dark:divide-gray-700/60">
+                {lines.map((line, idx) => (
+                  <tr key={line.tempId} className="border-b border-gray-100 dark:border-gray-700/60">
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-sm text-gray-400">
+                      {idx + 1}
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                      <div className="font-medium text-sm text-gray-800 dark:text-gray-100">
+                        {line.productName}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        {line.sku}
+                      </div>
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                      <CategoryBadge category={line.puCategory} />
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-sm tabular-nums text-gray-600 dark:text-gray-300">
+                      {line.puMetric}
+                      {line.durationMonths && (
+                        <div className="text-xs text-gray-400">{line.durationMonths} Months</div>
+                      )}
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-right">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={line.priceUnit}
+                        onChange={(e) => handleLineChange(line.tempId, 'priceUnit', parseFloat(e.target.value) || 0)}
+                        className="form-input w-24 text-right text-sm tabular-nums py-1"
+                      />
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-right">
+                      <input
+                        type="number"
+                        min="1"
+                        value={line.quantity}
+                        onChange={(e) => handleLineChange(line.tempId, 'quantity', parseInt(e.target.value) || 1)}
+                        className="form-input w-16 text-right text-sm tabular-nums py-1"
+                      />
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-right font-semibold text-sm tabular-nums text-gray-800 dark:text-gray-100">
+                      {formatCurrency(line.priceUnit * line.quantity)}
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLine(line.tempId)}
+                        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -584,12 +952,6 @@ export default function CreateOrderPage() {
                   {formatCurrency(summary.subtotal)}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">VAT (16%)</span>
-                <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
-                  {formatCurrency(summary.tax)}
-                </span>
-              </div>
               <div className="flex justify-between text-base border-t-2 border-gray-800 dark:border-gray-200 pt-2 mt-1.5">
                 <span className="font-bold text-gray-800 dark:text-gray-100">Total</span>
                 <span className="font-extrabold text-green-600 dark:text-green-400 tabular-nums">
@@ -599,17 +961,15 @@ export default function CreateOrderPage() {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Footer actions */}
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-700/60">
-        <Link
-          href="/portal/orders"
-          className="btn border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300"
-        >
-          Cancel
-        </Link>
-        <div className="flex gap-2">
+        {/* Footer actions */}
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
+          <Link
+            href="/portal/orders"
+            className="btn border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300"
+          >
+            Cancel
+          </Link>
           <button
             type="button"
             disabled={creating}

@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import { useQuery } from '@apollo/client'
 import Table from '@/components/table/table'
 import DateSelect from '@/components/date-select'
 import SearchForm from '@/components/search-form'
@@ -11,8 +10,8 @@ import PageSizeSelect from '@/components/page-size-select'
 import { SelectedItemsProvider } from '@/app/selected-items-context'
 import { columns } from './tableColumns'
 import { actions } from './tableActions'
-import { ORDERS_QUERY } from '@/lib/portal/queries'
-import type { OrderState, OrdersListResponse, OrdersFilterInput } from '@/lib/portal/types'
+import { getOrders, type GetOrdersParams } from '@/lib/portal/order-api'
+import type { OrderState, OrderEntity, PaginationMeta } from '@/lib/portal/types'
 
 const dateOptions = [
   { id: 0, period: 'Today' },
@@ -59,27 +58,42 @@ function OrdersPage() {
   const [stateFilter, setStateFilter] = useState<StateFilter>('all')
   const [dateFilterId, setDateFilterId] = useState<number>(4)
 
+  const [orders, setOrders] = useState<OrderEntity[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
+  const [loading, setLoading] = useState(false)
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500)
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  const filters = useMemo<OrdersFilterInput>(() => {
-    const f: OrdersFilterInput = { page, limit: itemsPerPage }
-    if (stateFilter !== 'all') f.state = stateFilter
-    if (debouncedSearchTerm.trim()) f.search = debouncedSearchTerm.trim()
+  const params = useMemo<GetOrdersParams>(() => {
+    const p: GetOrdersParams = { page, limit: itemsPerPage }
+    if (stateFilter !== 'all') p.state = stateFilter
+    if (debouncedSearchTerm.trim()) p.search = debouncedSearchTerm.trim()
     const createdAfter = getDateOffset(dateFilterId)
-    if (createdAfter) f.createdAfter = createdAfter
-    return f
+    if (createdAfter) p.created_after = createdAfter
+    return p
   }, [stateFilter, dateFilterId, debouncedSearchTerm, page, itemsPerPage])
 
-  const { data, loading, refetch } = useQuery<{ orders: OrdersListResponse['orders'] }>(
-    ORDERS_QUERY,
-    { variables: { filters }, fetchPolicy: 'cache-and-network' },
-  )
+  const fetchOrders = useCallback(async () => {
+    setLoading(true)
+    try {
+      const result = await getOrders(params)
+      setOrders(result.data)
+      setPagination(result.pagination)
+    } catch {
+      setOrders([])
+      setPagination(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [params])
 
-  const orders = data?.orders?.data ?? []
-  const pagination = data?.orders?.pagination
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
+
   const total = pagination?.totalRecords ?? 0
   const hasNextPage = pagination?.hasNextPage ?? false
   const hasPreviousPage = pagination?.hasPreviousPage ?? false
@@ -156,7 +170,7 @@ function OrdersPage() {
           data={orders}
           columns={columns}
           totalCount={orders.length}
-          actions={(row) => actions({ row, onDelete: () => refetch() })}
+          actions={(row) => actions({ row, onDelete: () => fetchOrders() })}
           isLoading={loading}
         />
       </div>

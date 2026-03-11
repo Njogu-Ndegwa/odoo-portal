@@ -2,14 +2,43 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useQuery } from '@apollo/client'
 import Link from 'next/link'
 import { Plus, X, Package } from 'lucide-react'
 import ComboboxSearch from '@/components/combobox-search'
 import { useAlert } from '@/app/contexts/alertContext'
-import { PRODUCT_UNITS_QUERY } from '@/lib/portal/queries'
-import { getMockOrder, formatCurrency } from '@/lib/portal/mock-orders'
-import type { OrderEntity, ProductUnitsListResponse, ProductUnitEntity } from '@/lib/portal/types'
+import { getProducts, type OdooProduct } from '@/lib/odoo-api'
+import { getSalesToken } from '@/lib/odoo-auth'
+import { getOrder as fetchOrderDetail, addOrderLines } from '@/lib/portal/order-api'
+import { formatCurrency } from '@/lib/portal/mock-orders'
+import { CategoryBadge } from '@/components/order-shared'
+import type { OrderEntity, ProductUnitEntity } from '@/lib/portal/types'
+
+function mapProduct(p: OdooProduct): ProductUnitEntity {
+  const pid = p.product_id ?? p.id
+  return {
+    id: String(pid),
+    name: p.name,
+    sku: p.default_code || null,
+    listPrice: p.list_price ?? null,
+    type: p.type ?? null,
+    puCategory: p.pu_category || null,
+    puMetric: p.pu_metric || null,
+    serviceType: p.service_type || null,
+    contractType: p.contract_type || null,
+    categoryName: p.category_name || null,
+    companyId: Array.isArray(p.company_id) ? p.company_id[0] : null,
+    companyName: Array.isArray(p.company_id) ? p.company_id[1] : null,
+    currencyName: p.currency ?? null,
+    recurringInvoice: p.recurring_invoice ?? null,
+    saleOk: p.sale_ok ?? null,
+    active: p.active ?? true,
+    imageUrl: p.image_url ?? null,
+    description: p.description || null,
+    descriptionSale: p.description_sale || null,
+    createdAt: p.create_date ?? null,
+    updatedAt: p.write_date ?? null,
+  }
+}
 
 interface EditLine {
   id: string
@@ -24,13 +53,12 @@ interface EditLine {
   quantity: number
 }
 
-const VAT_RATE = 0.16
-
 export default function EditOrderPage() {
   const params = useParams()
   const router = useRouter()
   const { alert } = useAlert()
   const id = params.id as string
+  const numericId = parseInt(id, 10)
 
   const [order, setOrder] = useState<OrderEntity | null>(null)
   const [lines, setLines] = useState<EditLine[]>([])
@@ -40,25 +68,25 @@ export default function EditOrderPage() {
   const [productDropdownOpen, setProductDropdownOpen] = useState(false)
   const [productSearch, setProductSearch] = useState('')
   const [debouncedProductSearch, setDebouncedProductSearch] = useState('')
+  const [products, setProducts] = useState<ProductUnitEntity[]>([])
+  const [productsLoading, setProductsLoading] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedProductSearch(productSearch), 300)
     return () => clearTimeout(t)
   }, [productSearch])
 
-  const { data: productsData, loading: productsLoading } = useQuery<ProductUnitsListResponse>(
-    PRODUCT_UNITS_QUERY,
-    {
-      variables: { filters: { search: debouncedProductSearch || undefined, limit: 5, active: true } },
-      skip: !productDropdownOpen,
-    }
-  )
-
-  const products = productsData?.productUnits.data ?? []
-
+  // Fetch order via REST
   useEffect(() => {
-    getMockOrder(id).then((o) => {
-      if (o) {
+    if (isNaN(numericId)) {
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    const fetchData = async () => {
+      try {
+        const o = await fetchOrderDetail(numericId)
+        if (cancelled) return
         setOrder(o)
         setLines(
           o.lines.map((l) => ({
@@ -74,10 +102,35 @@ export default function EditOrderPage() {
             quantity: l.quantity,
           }))
         )
+      } catch {
+        if (!cancelled) setOrder(null)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-      setLoading(false)
-    })
-  }, [id])
+    }
+    fetchData()
+    return () => { cancelled = true }
+  }, [numericId])
+
+  // Fetch products via REST
+  useEffect(() => {
+    if (!productDropdownOpen) return
+    let cancelled = false
+    const fetchData = async () => {
+      setProductsLoading(true)
+      try {
+        const token = getSalesToken()
+        const result = await getProducts(
+          { search: debouncedProductSearch || undefined, limit: 5, active: true },
+          token || undefined,
+        )
+        if (!cancelled) setProducts(result.products.map(mapProduct))
+      } catch { /* ignore */ }
+      if (!cancelled) setProductsLoading(false)
+    }
+    fetchData()
+    return () => { cancelled = true }
+  }, [productDropdownOpen, debouncedProductSearch])
 
   const physicalLines = lines.filter((l) => l.puCategory === 'physical')
   const contractLines = lines.filter((l) => l.puCategory !== 'physical')
@@ -86,9 +139,8 @@ export default function EditOrderPage() {
     const physicalSubtotal = physicalLines.reduce((s, l) => s + l.priceUnit * l.quantity, 0)
     const contractSubtotal = contractLines.reduce((s, l) => s + l.priceUnit * l.quantity, 0)
     const subtotal = physicalSubtotal + contractSubtotal
-    const tax = subtotal * VAT_RATE
-    const total = subtotal + tax
-    return { physicalSubtotal, contractSubtotal, subtotal, tax, total }
+    const total = subtotal
+    return { physicalSubtotal, contractSubtotal, subtotal, total }
   }, [physicalLines, contractLines])
 
   const handleAddProduct = useCallback(
@@ -137,10 +189,22 @@ export default function EditOrderPage() {
       return
     }
     setSaving(true)
-    await new Promise((r) => setTimeout(r, 500))
-    setSaving(false)
-    alert({ text: 'Order updated successfully. (Mock)', type: 'success' })
-    router.push(`/portal/orders/${id}`)
+    try {
+      await addOrderLines(
+        numericId,
+        lines.map((l) => ({
+          product_id: l.productId,
+          quantity: l.quantity,
+          price_unit: l.priceUnit,
+        })),
+      )
+      alert({ text: 'Order updated successfully.', type: 'success' })
+      router.push(`/portal/orders/${id}`)
+    } catch (err: any) {
+      alert({ text: err?.message ?? 'Failed to save changes.', type: 'error' })
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading) {
@@ -158,79 +222,6 @@ export default function EditOrderPage() {
           Order not found.
         </div>
       </div>
-    )
-  }
-
-  const renderLineRows = (lineGroup: EditLine[], categoryLabel: string, badgeClass: string) => {
-    if (lineGroup.length === 0) return null
-    return (
-      <>
-        <tr>
-          <td
-            colSpan={8}
-            className="bg-gray-50 dark:bg-gray-700/40 px-4 py-2 border-b border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass}`}>
-                {categoryLabel}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                {categoryLabel === 'Physical' ? 'Tangible Assets' : 'Entitlements & Obligations'}
-              </span>
-              <span className="text-gray-400 dark:text-gray-500 font-normal normal-case">
-                — {lineGroup.length} item{lineGroup.length > 1 ? 's' : ''}
-              </span>
-            </div>
-          </td>
-        </tr>
-        {lineGroup.map((line) => (
-          <tr key={line.id} className="border-b border-gray-100 dark:border-gray-700/60">
-            <td className="px-4 py-3 text-sm text-gray-400">{lines.indexOf(line) + 1}</td>
-            <td className="px-4 py-3">
-              <div className="font-medium text-sm text-gray-800 dark:text-gray-100">{line.productName}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {line.sku}{line.description ? ` · ${line.description}` : ''}
-              </div>
-            </td>
-            <td className="px-4 py-3">
-              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass}`}>
-                {categoryLabel}
-              </span>
-            </td>
-            <td className="px-4 py-3 text-sm tabular-nums text-gray-600 dark:text-gray-300">
-              {line.puMetric}
-              {line.durationMonths && <div className="text-xs text-gray-400">{line.durationMonths} Mo</div>}
-            </td>
-            <td className="px-4 py-3 text-right">
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={line.priceUnit}
-                onChange={(e) => handleLineChange(line.id, 'priceUnit', parseFloat(e.target.value) || 0)}
-                className="form-input w-24 text-right text-sm tabular-nums py-1"
-              />
-            </td>
-            <td className="px-4 py-3 text-right">
-              <input
-                type="number"
-                min="1"
-                value={line.quantity}
-                onChange={(e) => handleLineChange(line.id, 'quantity', parseInt(e.target.value) || 1)}
-                className="form-input w-16 text-right text-sm tabular-nums py-1"
-              />
-            </td>
-            <td className="px-4 py-3 text-right font-semibold text-sm tabular-nums text-gray-800 dark:text-gray-100">
-              {formatCurrency(line.priceUnit * line.quantity)}
-            </td>
-            <td className="px-4 py-3 text-center">
-              <button type="button" onClick={() => handleRemoveLine(line.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </td>
-          </tr>
-        ))}
-      </>
     )
   }
 
@@ -304,22 +295,79 @@ export default function EditOrderPage() {
 
         {lines.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-700/30">
-                  <th className="px-4 py-3 w-10">#</th>
-                  <th className="px-4 py-3">Product-Unit</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Metric</th>
-                  <th className="px-4 py-3 text-right">Unit Price</th>
-                  <th className="px-4 py-3 text-right">Qty</th>
-                  <th className="px-4 py-3 text-right">Subtotal</th>
-                  <th className="px-4 py-3 w-10"></th>
+            <table className="table-auto w-full dark:text-gray-300">
+              <thead className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20 border-t border-b border-gray-100 dark:border-gray-700/60">
+                <tr>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
+                    <div className="font-semibold text-left">#</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-left">Product-Unit</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-left">Category</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-left">Metric</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-right">Unit Price</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-right">Qty</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                    <div className="font-semibold text-right">Subtotal</div>
+                  </th>
+                  <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
-              <tbody>
-                {renderLineRows(physicalLines, 'Physical', 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300')}
-                {renderLineRows(contractLines, 'Contract', 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300')}
+              <tbody className="text-sm divide-y divide-gray-100 dark:divide-gray-700/60">
+                {lines.map((line, idx) => (
+                  <tr key={line.id} className="border-b border-gray-100 dark:border-gray-700/60">
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-sm text-gray-400">{idx + 1}</td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                      <div className="font-medium text-sm text-gray-800 dark:text-gray-100">{line.productName}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{line.sku}</div>
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
+                      <CategoryBadge category={line.puCategory} />
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-sm tabular-nums text-gray-600 dark:text-gray-300">
+                      {line.puMetric}
+                      {line.durationMonths && <div className="text-xs text-gray-400">{line.durationMonths} Mo</div>}
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-right">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={line.priceUnit}
+                        onChange={(e) => handleLineChange(line.id, 'priceUnit', parseFloat(e.target.value) || 0)}
+                        className="form-input w-24 text-right text-sm tabular-nums py-1"
+                      />
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-right">
+                      <input
+                        type="number"
+                        min="1"
+                        value={line.quantity}
+                        onChange={(e) => handleLineChange(line.id, 'quantity', parseInt(e.target.value) || 1)}
+                        className="form-input w-16 text-right text-sm tabular-nums py-1"
+                      />
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap text-right font-semibold text-sm tabular-nums text-gray-800 dark:text-gray-100">
+                      {formatCurrency(line.priceUnit * line.quantity)}
+                    </td>
+                    <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
+                      <button type="button" onClick={() => handleRemoveLine(line.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -351,10 +399,6 @@ export default function EditOrderPage() {
               <div className="flex justify-between text-sm border-t border-gray-100 dark:border-gray-700/60 pt-1.5">
                 <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{formatCurrency(summary.subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">VAT (16%)</span>
-                <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{formatCurrency(summary.tax)}</span>
               </div>
               <div className="flex justify-between text-base border-t-2 border-gray-800 dark:border-gray-200 pt-2 mt-1.5">
                 <span className="font-bold text-gray-800 dark:text-gray-100">Total</span>

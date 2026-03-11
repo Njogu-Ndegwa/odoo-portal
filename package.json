@@ -26,6 +26,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "graphql": "15.8.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.0",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",

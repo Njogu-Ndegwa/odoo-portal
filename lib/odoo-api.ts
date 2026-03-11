@@ -121,7 +121,7 @@ function isNetworkError(error: unknown): boolean {
   ].some(p => p.test(message));
 }
 
-async function fetchWithRetry(
+export async function fetchWithRetry(
   url: string,
   options: RequestInit,
   retryCount = 0
@@ -141,7 +141,7 @@ async function fetchWithRetry(
   }
 }
 
-async function parseOdooResponse<T>(response: Response, endpoint: string): Promise<T> {
+export async function parseOdooResponse<T>(response: Response, endpoint: string): Promise<T> {
   if (!response.ok) {
     const contentType = response.headers.get('content-type') || '';
     let errorMessage = `Server error (HTTP ${response.status})`;

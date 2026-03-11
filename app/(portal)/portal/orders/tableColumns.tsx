@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { TableColumn } from '@/components/table/table'
 import { formatCurrency } from '@/lib/portal/mock-orders'
 import type { OrderEntity } from '@/lib/portal/types'
@@ -8,6 +9,14 @@ const stateLabels: Record<string, { label: string; className: string }> = {
   sale: { label: 'Confirmed', className: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' },
   done: { label: 'Done', className: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300' },
   cancel: { label: 'Cancelled', className: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' },
+}
+
+const approvalLabels: Record<string, { label: string; className: string }> = {
+  approved: { label: 'Approved', className: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' },
+  pending: { label: 'Pending', className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' },
+  rejected: { label: 'Rejected', className: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' },
+  not_required: { label: 'N/A', className: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' },
+  none: { label: 'N/A', className: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' },
 }
 
 const paymentLabels: Record<string, { label: string; className: string }> = {
@@ -21,9 +30,12 @@ export const columns: TableColumn<OrderEntity>[] = [
     header: 'Order #',
     accessor: 'name' as keyof OrderEntity,
     cellRenderer: (_value: unknown, item: OrderEntity) => (
-      <div className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums text-xs">
+      <Link
+        href={`/portal/orders/${item.id}`}
+        className="font-semibold text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 tabular-nums text-xs"
+      >
         {item.name}
-      </div>
+      </Link>
     ),
   },
   {
@@ -46,6 +58,18 @@ export const columns: TableColumn<OrderEntity>[] = [
       return (
         <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${s.className}`}>
           {s.label}
+        </span>
+      )
+    },
+  },
+  {
+    header: 'Approval',
+    accessor: 'approvalStatus' as keyof OrderEntity,
+    cellRenderer: (_value: unknown, item: OrderEntity) => {
+      const a = approvalLabels[item.approvalStatus] ?? approvalLabels.none
+      return (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${a.className}`}>
+          {a.label}
         </span>
       )
     },
