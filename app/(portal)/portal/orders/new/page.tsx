@@ -29,6 +29,7 @@ import type {
   CustomerEntity,
   ProductUnitEntity,
   OrderEntity,
+  PaymentStatus,
 } from '@/lib/portal/types'
 
 // ============================================================================
@@ -476,7 +477,7 @@ export default function CreateOrderPage() {
         }
 
         if (result.orderPaymentStatus) {
-          updated.paymentStatus = result.orderPaymentStatus
+          updated.paymentStatus = result.orderPaymentStatus as PaymentStatus
         }
         if (result.paidAmount != null) updated.paidAmount = result.paidAmount
         if (result.remainingAmount != null) updated.remainingAmount = result.remainingAmount
@@ -546,7 +547,7 @@ export default function CreateOrderPage() {
     const renderActiveStep = () => {
       switch (activeStep) {
         case 1: return <StepRevise order={createdOrder} onConfirm={handleConfirm} readOnly={isViewingPastStep} />
-        case 2: return <StepApproval order={createdOrder} onRequestApproval={handleRequestApproval} onApprove={handleApprove} onReject={handleReject} onDownloadPdf={handleDownloadPdf} onSendProforma={handleSendProforma} />
+        case 2: return <StepApproval order={createdOrder} onRequestApproval={handleRequestApproval} onApprove={handleApprove} onReject={handleReject} onSendProforma={handleSendProforma} />
         case 3: return <StepPayment order={createdOrder} onRegisterPayment={handleRegisterPayment} />
         case 4: return <StepInvoice order={createdOrder} />
         default: return null

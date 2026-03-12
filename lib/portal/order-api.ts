@@ -45,7 +45,7 @@ function mapTimeline(raw: any[]): OrderTimelineEvent[] {
   }))
 }
 
-function fmtDate(d: string | null): string {
+function fmtDate(d: string | null | undefined): string {
   if (!d) return ''
   try {
     return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })

@@ -28,6 +28,7 @@ import type {
   OrderLineEntity,
   CustomerEntity,
   ProductUnitEntity,
+  PaymentStatus,
 } from '@/lib/portal/types'
 
 // ============================================================================
@@ -542,7 +543,7 @@ export default function OrderDetailPage() {
         }
 
         if (result.orderPaymentStatus) {
-          updated.paymentStatus = result.orderPaymentStatus
+          updated.paymentStatus = result.orderPaymentStatus as PaymentStatus
         }
         if (result.paidAmount != null) updated.paidAmount = result.paidAmount
         if (result.remainingAmount != null) updated.remainingAmount = result.remainingAmount
