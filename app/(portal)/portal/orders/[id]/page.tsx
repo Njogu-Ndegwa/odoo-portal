@@ -17,7 +17,6 @@ import {
   approveOrder as restApproveOrder,
   rejectOrder as restRejectOrder,
   registerPayment as restRegisterPayment,
-  getProformaPdf,
   sendProformaPdf,
 } from '@/lib/portal/order-api'
 import { formatCurrency } from '@/lib/portal/mock-orders'
@@ -561,20 +560,6 @@ export default function OrderDetailPage() {
     [numericId, alert, order],
   )
 
-  const handleDownloadPdf = useCallback(async () => {
-    try {
-      const pdf = await getProformaPdf(numericId)
-      if (pdf?.base64) {
-        const link = document.createElement('a')
-        link.href = `data:${pdf.contentType};base64,${pdf.base64}`
-        link.download = pdf.filename
-        link.click()
-      }
-    } catch (err: any) {
-      alert({ text: err?.message ?? 'Failed to download PDF', type: 'error' })
-    }
-  }, [numericId, alert])
-
   const handleSendProforma = useCallback(async () => {
     const res = await sendProformaPdf(numericId)
     if (!res.success) throw new Error(res.message ?? 'Failed to send proforma')
@@ -642,7 +627,7 @@ export default function OrderDetailPage() {
     switch (activeStep) {
       case 0: return <StepQuotation order={order} />
       case 1: return <StepRevise order={order} onConfirm={handleConfirm} readOnly={isViewingPastStep} />
-      case 2: return <StepApproval order={order} onRequestApproval={handleRequestApproval} onApprove={handleApprove} onReject={handleReject} onDownloadPdf={handleDownloadPdf} onSendProforma={handleSendProforma} />
+      case 2: return <StepApproval order={order} onRequestApproval={handleRequestApproval} onApprove={handleApprove} onReject={handleReject} onSendProforma={handleSendProforma} />
       case 3: return <StepPayment order={order} onRegisterPayment={handleRegisterPayment} />
       case 4: return <StepInvoice order={order} />
       default: return null

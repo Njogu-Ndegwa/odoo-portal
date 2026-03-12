@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Trash2, MoreHorizontal } from 'lucide-react'
+import { Pencil, Trash2 /*, MoreHorizontal */ } from 'lucide-react'
 import FeedbackModal from '@/components/feedback-modal'
 import { useAlert } from '@/app/contexts/alertContext'
 
@@ -41,9 +41,9 @@ function OrderActions({ row, onDelete }: ActionProps) {
     }
   }
 
-  const handleMore = () => {
-    router.push(`/portal/orders/${orderId}`)
-  }
+  // const handleMore = () => {
+  //   router.push(`/portal/orders/${orderId}`)
+  // }
 
   return (
     <div className="flex items-center gap-1">
@@ -65,14 +65,14 @@ function OrderActions({ row, onDelete }: ActionProps) {
         <Trash2 className={`w-4 h-4 ${canDelete ? 'text-red-500' : 'text-gray-500'}`} />
         <span className="sr-only">Delete</span>
       </button>
-      <button
+      {/* <button
         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
         onClick={handleMore}
         title="View details"
       >
         <MoreHorizontal className="w-4 h-4 text-gray-500" />
         <span className="sr-only">View details</span>
-      </button>
+      </button> */}
       <FeedbackModal
         isOpen={dangerModalOpen}
         setIsOpen={setDangerModalOpen}

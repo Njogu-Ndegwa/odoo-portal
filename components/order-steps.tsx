@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Pencil,
   Send,
@@ -249,14 +249,12 @@ export function StepApproval({
   onRequestApproval,
   onApprove,
   onReject,
-  onDownloadPdf,
   onSendProforma,
 }: {
   order: OrderEntity
   onRequestApproval: () => Promise<void> | void
   onApprove: (notes: string) => Promise<void> | void
   onReject: (notes: string) => Promise<void> | void
-  onDownloadPdf: () => Promise<void> | void
   onSendProforma: () => Promise<void> | void
 }) {
   const { alert } = useAlert()
@@ -286,6 +284,11 @@ export function StepApproval({
     }
     runAction('reject', () => onReject(approvalNotes))
   }
+
+  const handleDownloadPdf = useCallback(async () => {
+    const { generateInvoicePdf } = await import('@/lib/portal/generate-invoice-pdf')
+    await generateInvoicePdf(order, 'proforma', CompanyLogo.src)
+  }, [order])
 
   const proformaRef = `PI-${order.name.replace('SO-', '')}`
 
@@ -490,7 +493,7 @@ export function StepApproval({
                       <button
                         onClick={async () => {
                           setProformaLoading('download')
-                          try { await onDownloadPdf() } finally { setProformaLoading(null) }
+                          try { await handleDownloadPdf() } finally { setProformaLoading(null) }
                         }}
                         disabled={!!proformaLoading}
                         className="btn w-full border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300 disabled:opacity-50"
@@ -617,7 +620,7 @@ export function StepApproval({
                 <button
                   onClick={async () => {
                     setProformaLoading('download')
-                    try { await onDownloadPdf() } finally { setProformaLoading(null) }
+                    try { await handleDownloadPdf() } finally { setProformaLoading(null) }
                   }}
                   disabled={!!proformaLoading}
                   className="btn text-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300 disabled:opacity-50"
@@ -924,40 +927,19 @@ export function StepInvoice({ order }: { order: OrderEntity }) {
   const invoice = order.invoices[0]
   const invoiceRef = invoice?.name ?? `INV-${order.name.replace(/^S\/?\/?/, '')}`
   const invoiceDate = invoice?.createdAt ?? order.createdAt
-  const invoiceElRef = useRef<HTMLDivElement>(null)
   const [downloading, setDownloading] = useState(false)
 
   const handleDownloadPdf = useCallback(async () => {
-    const el = invoiceElRef.current
-    if (!el) return
     setDownloading(true)
     try {
-      const html2canvas = (await import('html2canvas')).default
-      const { jsPDF } = await import('jspdf')
-
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-      })
-      const imgData = canvas.toDataURL('image/png')
-      const imgWidth = canvas.width
-      const imgHeight = canvas.height
-
-      const pdfWidth = 210
-      const pdfContentWidth = pdfWidth - 20
-      const pdfContentHeight = (imgHeight * pdfContentWidth) / imgWidth
-      const pdfHeight = Math.max(297, pdfContentHeight + 20)
-
-      const pdf = new jsPDF({ unit: 'mm', format: [pdfWidth, pdfHeight] })
-      pdf.addImage(imgData, 'PNG', 10, 10, pdfContentWidth, pdfContentHeight)
-      pdf.save(`${invoiceRef}.pdf`)
+      const { generateInvoicePdf } = await import('@/lib/portal/generate-invoice-pdf')
+      await generateInvoicePdf(order, 'invoice', CompanyLogo.src)
     } catch {
       /* silently fail */
     } finally {
       setDownloading(false)
     }
-  }, [invoiceRef])
+  }, [order])
 
   return (
     <>
@@ -989,7 +971,7 @@ export function StepInvoice({ order }: { order: OrderEntity }) {
         </header>
 
         <div className="p-8 bg-gray-50 dark:bg-gray-900/30 flex justify-center">
-          <div ref={invoiceElRef} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 max-w-2xl w-full shadow-md">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-8 max-w-2xl w-full shadow-md">
             <div className="flex justify-between items-start mb-7">
               <div>
                 <h2 className="text-xl font-black text-gray-800 dark:text-gray-100">INVOICE</h2>
