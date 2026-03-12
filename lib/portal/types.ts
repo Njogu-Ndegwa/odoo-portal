@@ -98,6 +98,13 @@ export interface CustomersFilterInput {
   companyId?: number | null;
   strict?: boolean | null;
   allCompany?: boolean | null;
+  assignedTo?: number | null;
+  sort?: string | null;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  logic?: 'AND' | 'OR' | null;
   createdAfter?: string | null;
   createdBefore?: string | null;
   updatedAfter?: string | null;
@@ -116,8 +123,11 @@ export interface ProductUnitsFilterInput {
   type?: string | null;
   categoryId?: number | null;
   active?: boolean | null;
+  sort?: string | null;
   createdAfter?: string | null;
   createdBefore?: string | null;
+  updatedAfter?: string | null;
+  updatedBefore?: string | null;
   page?: number | null;
   limit?: number | null;
 }

@@ -260,6 +260,18 @@ export interface GetOrdersParams {
   partner_id?: number
   created_after?: string
   created_before?: string
+  updated_after?: string
+  updated_before?: string
+  date_from?: string
+  date_to?: string
+  sort?: string
+  amount_min?: number
+  amount_max?: number
+  mine?: boolean
+  sales_rep_id?: number
+  customer_id?: number
+  outlet_id?: number
+  channel_id?: number
   page?: number
   limit?: number
 }
@@ -276,8 +288,20 @@ export async function getOrders(params: GetOrdersParams = {}): Promise<OrdersLis
   if (params.approval_status) qp.append('approval_status', params.approval_status)
   if (params.payment_status) qp.append('payment_status', params.payment_status)
   if (params.partner_id !== undefined) qp.append('partner_id', String(params.partner_id))
+  if (params.customer_id !== undefined) qp.append('customer_id', String(params.customer_id))
+  if (params.sales_rep_id !== undefined) qp.append('sales_rep_id', String(params.sales_rep_id))
+  if (params.outlet_id !== undefined) qp.append('outlet_id', String(params.outlet_id))
+  if (params.channel_id !== undefined) qp.append('channel_id', String(params.channel_id))
   if (params.created_after) qp.append('created_after', params.created_after)
   if (params.created_before) qp.append('created_before', params.created_before)
+  if (params.updated_after) qp.append('updated_after', params.updated_after)
+  if (params.updated_before) qp.append('updated_before', params.updated_before)
+  if (params.date_from) qp.append('date_from', params.date_from)
+  if (params.date_to) qp.append('date_to', params.date_to)
+  if (params.sort) qp.append('sort', params.sort)
+  if (params.amount_min !== undefined) qp.append('amount_min', String(params.amount_min))
+  if (params.amount_max !== undefined) qp.append('amount_max', String(params.amount_max))
+  if (params.mine) qp.append('mine', 'true')
   if (params.page !== undefined) qp.append('page', String(params.page))
   if (params.limit !== undefined) qp.append('limit', String(params.limit))
 

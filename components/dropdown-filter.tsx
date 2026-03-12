@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react'
 
 export interface FilterDefinition {
@@ -13,6 +13,7 @@ interface DropdownFilterProps {
   filters?: FilterDefinition[];
   values?: Record<string, boolean>;
   onChange?: (values: Record<string, boolean>) => void;
+  renderExtra?: (draftValues: Record<string, boolean>) => ReactNode;
 }
 
 const defaultFilters: FilterDefinition[] = [
@@ -29,6 +30,7 @@ export default function DropdownFilter({
   filters,
   values: controlledValues,
   onChange,
+  renderExtra,
 }: DropdownFilterProps) {
 
   const filterItems = filters || defaultFilters
@@ -107,6 +109,11 @@ export default function DropdownFilter({
                         </li>
                       ))}
                     </ul>
+                    {renderExtra && (
+                      <div className="px-3 pb-3 border-t border-gray-200 dark:border-gray-700/60 pt-3">
+                        {renderExtra(draftValues)}
+                      </div>
+                    )}
                     <div className="py-2 px-3 border-t border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-700/20">
                       <ul className="flex items-center justify-between">
                         <li>

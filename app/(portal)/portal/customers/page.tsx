@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Table from '@/components/table/table'
 import DynamicDropdown from '@/components/dropdown-dynamic'
 import DateSelect from '@/components/date-select'
+import DropdownSelect from '@/components/dropdown-select'
 import FilterButton from '@/components/dropdown-filter'
 import type { FilterDefinition } from '@/components/dropdown-filter'
 import SearchForm from '@/components/search-form'
@@ -48,6 +49,16 @@ const advancedFilterDefs: FilterDefinition[] = [
   { key: 'strict', label: 'Strict company match' },
 ]
 
+const sortOptions = [
+  { value: '', label: 'Default' },
+  { value: 'name', label: 'Name (A-Z)' },
+  { value: 'name_desc', label: 'Name (Z-A)' },
+  { value: 'date', label: 'Date (newest)' },
+  { value: 'date_asc', label: 'Date (oldest)' },
+  { value: 'updated', label: 'Updated (newest)' },
+  { value: 'updated_asc', label: 'Updated (oldest)' },
+]
+
 type TypeFilter = 'all' | 'individual' | 'company'
 
 const typeFilterMap: Record<TypeFilter, ContactType | undefined> = {
@@ -74,6 +85,12 @@ function PortalCustomersPage() {
   const [dateFilterId, setDateFilterId] = useState<number>(4)
   const [customDateRange, setCustomDateRange] = useState<{ from: string; to: string } | null>(null)
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, boolean>>({})
+  const [sortValue, setSortValue] = useState('')
+
+  const [fieldName, setFieldName] = useState('')
+  const [fieldEmail, setFieldEmail] = useState('')
+  const [fieldPhone, setFieldPhone] = useState('')
+  const [fieldLogic, setFieldLogic] = useState<'AND' | 'OR'>('AND')
 
   const [employees, setEmployees] = useState<Employee[]>([])
   const [agentSearchQuery, setAgentSearchQuery] = useState('')
@@ -112,8 +129,21 @@ function PortalCustomersPage() {
       f.updatedAfter = d.toISOString().split('T')[0]
     }
 
+    if (sortValue) f.sort = sortValue
+
+    if (fieldName.trim()) f.name = fieldName.trim()
+    if (fieldEmail.trim()) f.email = fieldEmail.trim()
+    if (fieldPhone.trim()) f.phone = fieldPhone.trim()
+    if (fieldName.trim() || fieldEmail.trim() || fieldPhone.trim()) {
+      f.logic = fieldLogic
+    }
+
     return f
-  }, [typeFilter, dateFilterId, customDateRange, advancedFilters, debouncedSearchTerm, page, itemsPerPage])
+  }, [
+    typeFilter, dateFilterId, customDateRange, advancedFilters,
+    debouncedSearchTerm, sortValue, fieldName, fieldEmail, fieldPhone, fieldLogic,
+    page, itemsPerPage,
+  ])
 
   const { data, loading, refetch } = useQuery<CustomersListResponse>(CUSTOMERS_QUERY, {
     variables: { filters },
@@ -130,7 +160,10 @@ function PortalCustomersPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearchTerm, typeFilter, dateFilterId, customDateRange, advancedFilters])
+  }, [
+    debouncedSearchTerm, typeFilter, dateFilterId, customDateRange,
+    advancedFilters, sortValue, fieldName, fieldEmail, fieldPhone, fieldLogic,
+  ])
 
   useEffect(() => {
     if (!isAgentModalOpen) return
@@ -253,6 +286,18 @@ function PortalCustomersPage() {
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
           />
+          <DropdownSelect
+            options={sortOptions}
+            selected={sortValue}
+            onChange={setSortValue}
+            placeholder="Sort"
+            align="right"
+            icon={
+              <svg className="fill-current text-gray-400 dark:text-gray-500" width="16" height="16" viewBox="0 0 16 16">
+                <path d="M3.5 3.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L3.5 12.293V3.5zm4 .5a.5.5 0 0 1 0-1h1a.5.5 0 0 1 0 1h-1zm0 3a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-3zm0 3a.5.5 0 0 1 0-1h5a.5.5 0 0 1 0 1h-5zm0 3a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1h-7z" />
+              </svg>
+            }
+          />
           <Link
             href="/portal/customers/new"
             className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white flex items-center justify-center"
@@ -274,7 +319,7 @@ function PortalCustomersPage() {
       </div>
 
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
-        {/* Left side — type pills */}
+        {/* Left side -- type pills */}
         <div className="mb-4 sm:mb-0">
           <ul className="flex flex-wrap -m-1">
             {typePills.map((pill) => (
@@ -310,6 +355,52 @@ function PortalCustomersPage() {
             filters={advancedFilterDefs}
             values={advancedFilters}
             onChange={setAdvancedFilters}
+            renderExtra={() => (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Field Search</label>
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={fieldName}
+                    onChange={(e) => setFieldName(e.target.value)}
+                    className="form-input w-full text-sm py-1 mb-1.5"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Email"
+                    value={fieldEmail}
+                    onChange={(e) => setFieldEmail(e.target.value)}
+                    className="form-input w-full text-sm py-1 mb-1.5"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone"
+                    value={fieldPhone}
+                    onChange={(e) => setFieldPhone(e.target.value)}
+                    className="form-input w-full text-sm py-1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Match Logic</label>
+                  <div className="flex gap-2">
+                    {(['AND', 'OR'] as const).map((logic) => (
+                      <button
+                        key={logic}
+                        className={`text-xs font-medium px-3 py-1 rounded-full border transition ${
+                          fieldLogic === logic
+                            ? 'border-transparent bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-800'
+                            : 'border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                        }`}
+                        onClick={() => setFieldLogic(logic)}
+                      >
+                        {logic}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           />
         </div>
       </div>

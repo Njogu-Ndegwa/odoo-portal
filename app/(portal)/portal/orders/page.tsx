@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import Table from '@/components/table/table'
 import DateSelect from '@/components/date-select'
+import DropdownSelect from '@/components/dropdown-select'
+import FilterButton from '@/components/dropdown-filter'
+import type { FilterDefinition } from '@/components/dropdown-filter'
 import SearchForm from '@/components/search-form'
 import PaginationClassic from '@/components/pagination-classic'
 import PageSizeSelect from '@/components/page-size-select'
@@ -40,6 +43,38 @@ const statePills: { key: StateFilter; label: string }[] = [
   { key: 'sent', label: 'Sent' },
   { key: 'sale', label: 'Confirmed' },
   { key: 'done', label: 'Done' },
+  { key: 'cancel', label: 'Cancelled' },
+]
+
+const sortOptions = [
+  { value: '', label: 'Default' },
+  { value: 'date', label: 'Date (newest)' },
+  { value: 'date_asc', label: 'Date (oldest)' },
+  { value: 'updated', label: 'Updated (newest)' },
+  { value: 'updated_asc', label: 'Updated (oldest)' },
+  { value: 'amount', label: 'Amount (high)' },
+  { value: 'amount_asc', label: 'Amount (low)' },
+  { value: 'name', label: 'Name' },
+  { value: 'customer', label: 'Customer' },
+]
+
+const approvalOptions = [
+  { value: '', label: 'All Approvals' },
+  { value: 'not_required', label: 'Not Required' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+]
+
+const paymentOptions = [
+  { value: '', label: 'All Payments' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'unpaid', label: 'Unpaid' },
+  { value: 'partial', label: 'Partial' },
+]
+
+const advancedFilterDefs: FilterDefinition[] = [
+  { key: 'mine', label: 'My orders only' },
 ]
 
 export default function OrdersPageWrapper() {
@@ -57,6 +92,14 @@ function OrdersPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [stateFilter, setStateFilter] = useState<StateFilter>('all')
   const [dateFilterId, setDateFilterId] = useState<number>(4)
+  const [customDateRange, setCustomDateRange] = useState<{ from: string; to: string } | null>(null)
+
+  const [sortValue, setSortValue] = useState('')
+  const [approvalFilter, setApprovalFilter] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState('')
+  const [advancedFilters, setAdvancedFilters] = useState<Record<string, boolean>>({})
+  const [amountMin, setAmountMin] = useState('')
+  const [amountMax, setAmountMax] = useState('')
 
   const [orders, setOrders] = useState<OrderEntity[]>([])
   const [pagination, setPagination] = useState<PaginationMeta | null>(null)
@@ -69,12 +112,34 @@ function OrdersPage() {
 
   const params = useMemo<GetOrdersParams>(() => {
     const p: GetOrdersParams = { page, limit: itemsPerPage }
+
     if (stateFilter !== 'all') p.state = stateFilter
     if (debouncedSearchTerm.trim()) p.search = debouncedSearchTerm.trim()
-    const createdAfter = getDateOffset(dateFilterId)
-    if (createdAfter) p.created_after = createdAfter
+
+    if (customDateRange) {
+      p.created_after = customDateRange.from
+      p.created_before = customDateRange.to
+    } else {
+      const createdAfter = getDateOffset(dateFilterId)
+      if (createdAfter) p.created_after = createdAfter
+    }
+
+    if (sortValue) p.sort = sortValue
+    if (approvalFilter) p.approval_status = approvalFilter
+    if (paymentFilter) p.payment_status = paymentFilter
+    if (advancedFilters.mine) p.mine = true
+
+    const min = Number(amountMin)
+    const max = Number(amountMax)
+    if (amountMin && !isNaN(min)) p.amount_min = min
+    if (amountMax && !isNaN(max)) p.amount_max = max
+
     return p
-  }, [stateFilter, dateFilterId, debouncedSearchTerm, page, itemsPerPage])
+  }, [
+    stateFilter, dateFilterId, customDateRange, debouncedSearchTerm,
+    sortValue, approvalFilter, paymentFilter, advancedFilters,
+    amountMin, amountMax, page, itemsPerPage,
+  ])
 
   const fetchOrders = useCallback(async () => {
     setLoading(true)
@@ -100,7 +165,11 @@ function OrdersPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearchTerm, stateFilter, dateFilterId])
+  }, [
+    debouncedSearchTerm, stateFilter, dateFilterId, customDateRange,
+    sortValue, approvalFilter, paymentFilter, advancedFilters,
+    amountMin, amountMax,
+  ])
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
@@ -120,6 +189,18 @@ function OrdersPage() {
         </div>
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
           <SearchForm placeholder="Search orders…" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+          <DropdownSelect
+            options={sortOptions}
+            selected={sortValue}
+            onChange={setSortValue}
+            placeholder="Sort"
+            align="right"
+            icon={
+              <svg className="fill-current text-gray-400 dark:text-gray-500" width="16" height="16" viewBox="0 0 16 16">
+                <path d="M3.5 3.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L3.5 12.293V3.5zm4 .5a.5.5 0 0 1 0-1h1a.5.5 0 0 1 0 1h-1zm0 3a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-3zm0 3a.5.5 0 0 1 0-1h5a.5.5 0 0 1 0 1h-5zm0 3a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1h-7z" />
+              </svg>
+            }
+          />
           <Link
             href="/portal/orders/new"
             className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white flex items-center justify-center"
@@ -132,7 +213,7 @@ function OrdersPage() {
         </div>
       </div>
 
-      {/* Filters row */}
+      {/* State pills */}
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
         <div className="mb-4 sm:mb-0">
           <ul className="flex flex-wrap -m-1">
@@ -159,7 +240,53 @@ function OrdersPage() {
           <DateSelect
             options={dateOptions}
             selected={dateFilterId}
-            onChange={(id: number) => setDateFilterId(id)}
+            onChange={(id: number) => { setDateFilterId(id); if (id !== -1) setCustomDateRange(null) }}
+            enableCustomRange
+            onCustomRange={(from: string, to: string) => setCustomDateRange({ from, to })}
+          />
+          <DropdownSelect
+            options={approvalOptions}
+            selected={approvalFilter}
+            onChange={setApprovalFilter}
+            placeholder="Approval"
+            align="right"
+          />
+          <DropdownSelect
+            options={paymentOptions}
+            selected={paymentFilter}
+            onChange={setPaymentFilter}
+            placeholder="Payment"
+            align="right"
+          />
+          <FilterButton
+            align="right"
+            filters={advancedFilterDefs}
+            values={advancedFilters}
+            onChange={setAdvancedFilters}
+            renderExtra={() => (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Amount Range</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={amountMin}
+                      onChange={(e) => setAmountMin(e.target.value)}
+                      className="form-input w-full text-sm py-1"
+                    />
+                    <span className="text-gray-400">–</span>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={amountMax}
+                      onChange={(e) => setAmountMax(e.target.value)}
+                      className="form-input w-full text-sm py-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           />
         </div>
       </div>

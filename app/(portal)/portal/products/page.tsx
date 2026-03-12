@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Table from '@/components/table/table'
 import DynamicDropdown from '@/components/dropdown-dynamic'
 import DateSelect from '@/components/date-select'
+import DropdownSelect from '@/components/dropdown-select'
 import FilterButton from '@/components/dropdown-filter'
 import type { FilterDefinition } from '@/components/dropdown-filter'
 import SearchForm from '@/components/search-form'
@@ -46,6 +47,26 @@ const advancedFilterDefs: FilterDefinition[] = [
   { key: 'contract_rental', label: 'Contract: Rental' },
   { key: 'contract_maintenance', label: 'Contract: Maintenance' },
   { key: 'contract_asset_assignment', label: 'Contract: Asset Assignment' },
+  { key: 'active_only', label: 'Active only' },
+  { key: 'show_inactive', label: 'Show inactive' },
+  { key: 'recently_updated', label: 'Recently updated only' },
+]
+
+const sortOptions = [
+  { value: '', label: 'Default' },
+  { value: 'name', label: 'Name (A-Z)' },
+  { value: 'date', label: 'Date (newest)' },
+  { value: 'updated', label: 'Updated (newest)' },
+  { value: 'price', label: 'Price (high-low)' },
+]
+
+const metricOptions = [
+  { value: '', label: 'All Metrics' },
+  { value: 'piece', label: 'Piece' },
+  { value: 'duration', label: 'Duration' },
+  { value: 'count', label: 'Count' },
+  { value: 'energy', label: 'Energy' },
+  { value: 'distance', label: 'Distance' },
 ]
 
 type CategoryFilter = 'all' | 'physical' | 'service' | 'contract' | 'digital'
@@ -68,6 +89,8 @@ function PortalProductsPage() {
   const [dateFilterId, setDateFilterId] = useState<number>(4)
   const [customDateRange, setCustomDateRange] = useState<{ from: string; to: string } | null>(null)
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, boolean>>({})
+  const [sortValue, setSortValue] = useState('')
+  const [metricFilter, setMetricFilter] = useState('')
 
   const { setSelectedItems } = useSelectedItems()
 
@@ -99,8 +122,23 @@ function PortalProductsPage() {
     )
     if (contractKey) f.contractType = contractKey.replace('contract_', '')
 
+    if (advancedFilters.active_only) f.active = true
+    else if (advancedFilters.show_inactive) f.active = false
+
+    if (advancedFilters.recently_updated) {
+      const d = new Date()
+      d.setDate(d.getDate() - 7)
+      f.updatedAfter = d.toISOString().split('T')[0]
+    }
+
+    if (sortValue) f.sort = sortValue
+    if (metricFilter) f.puMetric = metricFilter
+
     return f
-  }, [categoryFilter, debouncedSearchTerm, dateFilterId, customDateRange, advancedFilters, page, itemsPerPage])
+  }, [
+    categoryFilter, debouncedSearchTerm, dateFilterId, customDateRange,
+    advancedFilters, sortValue, metricFilter, page, itemsPerPage,
+  ])
 
   const { data, loading, refetch } = useQuery<ProductUnitsListResponse>(PRODUCT_UNITS_QUERY, {
     variables: { filters },
@@ -115,7 +153,7 @@ function PortalProductsPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearchTerm, categoryFilter, dateFilterId, customDateRange, advancedFilters])
+  }, [debouncedSearchTerm, categoryFilter, dateFilterId, customDateRange, advancedFilters, sortValue, metricFilter])
 
   const handleNextPage = () => {
     if (hasNextPage) setPage((p) => p + 1)
@@ -170,6 +208,18 @@ function PortalProductsPage() {
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
           />
+          <DropdownSelect
+            options={sortOptions}
+            selected={sortValue}
+            onChange={setSortValue}
+            placeholder="Sort"
+            align="right"
+            icon={
+              <svg className="fill-current text-gray-400 dark:text-gray-500" width="16" height="16" viewBox="0 0 16 16">
+                <path d="M3.5 3.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L3.5 12.293V3.5zm4 .5a.5.5 0 0 1 0-1h1a.5.5 0 0 1 0 1h-1zm0 3a.5.5 0 0 1 0-1h3a.5.5 0 0 1 0 1h-3zm0 3a.5.5 0 0 1 0-1h5a.5.5 0 0 1 0 1h-5zm0 3a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1h-7z" />
+              </svg>
+            }
+          />
           <Link
             href="/portal/products/new"
             className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white flex items-center justify-center"
@@ -183,7 +233,7 @@ function PortalProductsPage() {
       </div>
 
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
-        {/* Left side — category pills */}
+        {/* Left side -- category pills */}
         <div className="mb-4 sm:mb-0">
           <ul className="flex flex-wrap -m-1">
             {categoryPills.map((pill) => (
@@ -207,6 +257,13 @@ function PortalProductsPage() {
         {/* Right side */}
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
           <DynamicDropdown options={dropdownOptions} onDropdownItemSelect={() => {}} />
+          <DropdownSelect
+            options={metricOptions}
+            selected={metricFilter}
+            onChange={setMetricFilter}
+            placeholder="Metric"
+            align="right"
+          />
           <DateSelect
             options={dateOptions}
             selected={dateFilterId}
