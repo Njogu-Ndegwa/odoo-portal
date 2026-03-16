@@ -5,8 +5,12 @@ import {
   employeeLogin,
   getSalesUser,
   clearSalesLogin,
+  clearSelectedSA,
+  saveSelectedSA,
   type EmployeeUser,
 } from "@/lib/odoo-auth";
+import { fetchMyServiceAccounts } from "@/lib/sa-api";
+import type { ServiceAccount } from "@/lib/sa-types";
 
 interface AuthContextType {
   user: EmployeeUser | null;
@@ -15,6 +19,7 @@ interface AuthContextType {
   error: string | null;
   signIn: (credentials: { email: string; password: string }) => void;
   signOut: () => void;
+  pendingSAs: ServiceAccount[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +30,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<EmployeeUser | null>(() => getSalesUser());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingSAs, setPendingSAs] = useState<ServiceAccount[]>([]);
   const router = useRouter();
 
   const signIn = async (credentials: { email: string; password: string }) => {
@@ -32,11 +38,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     setError(null);
     try {
       const result = await employeeLogin(credentials.email, credentials.password);
-      if (result.success && result.user) {
-        setUser(result.user);
-        router.push("/portal");
-      } else {
+      if (!result.success || !result.user) {
         setError(result.error || "Login failed. Please check your credentials.");
+        return;
+      }
+
+      setUser(result.user);
+
+      const token = result.user.accessToken;
+      if (!token) {
+        router.push("/portal");
+        return;
+      }
+
+      try {
+        const saRes = await fetchMyServiceAccounts(token);
+        const accounts = saRes.service_accounts ?? [];
+
+        if (accounts.length === 0) {
+          setError("No service accounts available for this user.");
+          return;
+        }
+
+        if (accounts.length === 1 && saRes.auto_selected) {
+          saveSelectedSA(accounts[0]);
+          router.push("/portal");
+        } else {
+          setPendingSAs(accounts);
+          router.push("/portal/select-sa");
+        }
+      } catch {
+        router.push("/portal");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -47,12 +79,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const signOut = () => {
     clearSalesLogin();
+    clearSelectedSA();
     setUser(null);
+    setPendingSAs([]);
     router.push("/signin");
   };
 
   return (
-    <AuthContext.Provider value={{ user, distributorId: user?.companyId?.toString(), loading, error, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        distributorId: user?.companyId?.toString(),
+        loading,
+        error,
+        signIn,
+        signOut,
+        pendingSAs,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

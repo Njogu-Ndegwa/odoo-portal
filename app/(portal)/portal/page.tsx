@@ -1,12 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { useSA } from '@/lib/sa-context'
 
 type Applet = {
   title: string
   href: string
   gradient: string
   enabled: boolean
+  adminOnly?: boolean
   icon: React.ReactNode
 }
 
@@ -155,6 +157,23 @@ const applets: Applet[] = [
     ),
   },
   {
+    title: 'Accounts',
+    href: '/portal/service-accounts',
+    gradient: 'from-violet-600 to-violet-700',
+    enabled: true,
+    adminOnly: true,
+    icon: (
+      <svg className="w-9 h-9" viewBox="0 0 48 48" fill="none">
+        <rect x="6" y="8" width="36" height="32" rx="6" fill="white" fillOpacity={0.3} />
+        <path d="M6 14a6 6 0 0 1 6-6h24a6 6 0 0 1 6 6v4H6v-4z" fill="white" fillOpacity={0.7} />
+        <circle cx="18" cy="30" r="5" fill="white" fillOpacity={0.6} />
+        <circle cx="30" cy="30" r="5" fill="white" fillOpacity={0.4} />
+        <path d="M13 37c0-2.2 2.2-4 5-4s5 1.8 5 4" fill="white" fillOpacity={0.5} />
+        <path d="M25 37c0-2.2 2.2-4 5-4s5 1.8 5 4" fill="white" fillOpacity={0.35} />
+      </svg>
+    ),
+  },
+  {
     title: 'Settings',
     href: '/settings',
     gradient: 'from-gray-500 to-gray-600',
@@ -177,11 +196,14 @@ const applets: Applet[] = [
 ]
 
 export default function PortalPage() {
+  const { isAdmin } = useSA()
+  const visibleApplets = applets.filter((a) => !a.adminOnly || isAdmin)
+
   return (
     <div className="flex items-center justify-center min-h-full px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-4xl">
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-10 sm:gap-x-8 sm:gap-y-12">
-          {applets.map((applet) =>
+          {visibleApplets.map((applet) =>
             applet.enabled ? (
               <Link
                 key={applet.title}

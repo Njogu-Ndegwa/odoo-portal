@@ -11,10 +11,15 @@ const authLink = setContext((_, { headers }) => {
     typeof window !== "undefined"
       ? localStorage.getItem(STORAGE_KEYS.SALES_ACCESS_TOKEN)
       : null;
+  const saId =
+    typeof window !== "undefined"
+      ? localStorage.getItem(STORAGE_KEYS.SA_ID)
+      : null;
   return {
     headers: {
       ...headers,
       authorization: token ? `Bearer ${token}` : "",
+      ...(saId ? { "x-sa-id": saId } : {}),
     },
   };
 });

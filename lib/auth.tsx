@@ -37,12 +37,28 @@ export const isAuthenticated = (): boolean => {
   return getDecodedToken() !== null;
 };
 
+export const hasSASelected = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem(STORAGE_KEYS.SA_ID);
+};
+
+const SA_EXEMPT_PATHS = ['/portal/select-sa', '/signin', '/signup', '/reset-password'];
+
+function isExemptFromSA(): boolean {
+  if (typeof window === 'undefined') return true;
+  return SA_EXEMPT_PATHS.some((p) => window.location.pathname.startsWith(p));
+}
+
 export function withAuth(Component: React.ComponentType) {
   return function ProtectedRoute(props: Record<string, unknown>) {
     if (typeof window !== 'undefined') {
       const decoded = getDecodedToken();
       if (!decoded) {
         redirect('/signin');
+        return null;
+      }
+      if (!hasSASelected() && !isExemptFromSA()) {
+        redirect('/portal/select-sa');
         return null;
       }
       return <Component {...props} />;
@@ -56,6 +72,10 @@ export function isAuth<P extends Record<string, unknown>>(Component: React.Compo
     useEffect(() => {
       if (!getDecodedToken()) {
         redirect('/signin');
+        return;
+      }
+      if (!hasSASelected() && !isExemptFromSA()) {
+        redirect('/portal/select-sa');
       }
     }, []);
 
@@ -65,17 +85,33 @@ export function isAuth<P extends Record<string, unknown>>(Component: React.Compo
 
 export const useMenuVisibility = () => {
   const decoded = getDecodedToken();
-  const role = (decoded?.role as string) || '';
+  const jwtRole = (decoded?.role as string) || '';
+
+  let saRole: string | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.SA_DATA);
+      if (raw) {
+        const sa = JSON.parse(raw);
+        saRole = sa?.my_role ?? null;
+      }
+    } catch { /* ignore */ }
+  }
+
+  const effectiveRole = saRole || jwtRole;
 
   const menuPermissions: Record<string, string[]> = {
+    admin: ['dashboard', 'accounts', 'thing', 'staff', 'service-accounts'],
+    staff: ['dashboard', 'accounts', 'thing', 'staff'],
+    agent: ['dashboard', 'accounts', 'thing'],
     salesrep: ['dashboard', 'accounts', 'thing', 'staff'],
     salesattendant: ['dashboard', 'accounts', 'thing', 'staff'],
   };
 
   const canViewMenu = (menuId: string): boolean => {
-    if (!role) return true;
-    return menuPermissions[role]?.includes(menuId) ?? true;
+    if (!effectiveRole) return true;
+    return menuPermissions[effectiveRole]?.includes(menuId) ?? true;
   };
 
-  return { canViewMenu, userType: role };
+  return { canViewMenu, userType: effectiveRole };
 };

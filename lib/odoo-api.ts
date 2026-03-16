@@ -1,5 +1,6 @@
+import { buildOdooHeaders } from '@/lib/odoo-headers';
+
 const ODOO_BASE_URL = process.env.NEXT_PUBLIC_ODOO_API_URL || 'https://crm-omnivoltaic.odoo.com';
-const ODOO_API_KEY = process.env.NEXT_PUBLIC_ODOO_API_KEY || 'abs_connector_secret_key_2024';
 
 // ============================================================================
 // Types
@@ -212,13 +213,7 @@ export async function getContacts(
   const endpoint = `/api/contacts${qs ? `?${qs}` : ''}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, { method: 'GET', headers });
   return parseOdooResponse<ContactsListApiResponse>(response, endpoint);
@@ -231,13 +226,7 @@ export async function getContactById(
   const endpoint = `/api/contacts/${contactId}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, { method: 'GET', headers });
   return parseOdooResponse<ContactDetailApiResponse>(response, endpoint);
@@ -251,13 +240,7 @@ export async function updateContact(
   const endpoint = `/api/contacts/${contactId}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, {
     method: 'PUT',
@@ -274,13 +257,7 @@ export async function createContact(
   const endpoint = '/api/contacts';
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, {
     method: 'POST',
@@ -297,13 +274,7 @@ export async function deleteContact(
   const endpoint = `/api/contacts/${contactId}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, { method: 'DELETE', headers });
   return parseOdooResponse<ContactDeleteApiResponse>(response, endpoint);
@@ -363,13 +334,7 @@ export async function getEmployees(
   const endpoint = `/api/employees${qs ? `?${qs}` : ''}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, { method: 'GET', headers });
   return parseOdooResponse<EmployeesListApiResponse>(response, endpoint);
@@ -395,13 +360,7 @@ export async function assignContactToEmployee(
   const endpoint = `/api/contacts/${contactId}/assign`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, {
     method: 'POST',
@@ -530,13 +489,7 @@ export async function getProducts(
   const endpoint = `/api/products${qs ? `?${qs}` : ''}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, { method: 'GET', headers });
   return parseOdooResponse<ProductsListApiResponse>(response, endpoint);
@@ -549,13 +502,7 @@ export async function getProductById(
   const endpoint = `/api/products/${productId}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, { method: 'GET', headers });
   return parseOdooResponse<ProductDetailApiResponse>(response, endpoint);
@@ -568,13 +515,7 @@ export async function createProduct(
   const endpoint = '/api/products';
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, {
     method: 'POST',
@@ -592,13 +533,7 @@ export async function updateProduct(
   const endpoint = `/api/products/${productId}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, {
     method: 'PATCH',
@@ -615,13 +550,7 @@ export async function deleteProduct(
   const endpoint = `/api/products/${productId}`;
   const url = `${ODOO_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  };
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
-  }
+  const headers: HeadersInit = buildOdooHeaders(authToken);
 
   const response = await fetchWithRetry(url, { method: 'DELETE', headers });
   return parseOdooResponse<ProductDeleteApiResponse>(response, endpoint);

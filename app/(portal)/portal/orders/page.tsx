@@ -10,7 +10,7 @@ import type { FilterDefinition } from '@/components/dropdown-filter'
 import SearchForm from '@/components/search-form'
 import PaginationClassic from '@/components/pagination-classic'
 import PageSizeSelect from '@/components/page-size-select'
-import { SelectedItemsProvider } from '@/app/selected-items-context'
+import { SelectedItemsProvider, useSelectedItems } from '@/app/selected-items-context'
 import { columns } from './tableColumns'
 import { actions } from './tableActions'
 import { getOrders, type GetOrdersParams } from '@/lib/portal/order-api'
@@ -86,6 +86,7 @@ export default function OrdersPageWrapper() {
 }
 
 function OrdersPage() {
+  const { setSelectedItems } = useSelectedItems()
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [page, setPage] = useState(1)
@@ -158,6 +159,10 @@ function OrdersPage() {
   useEffect(() => {
     fetchOrders()
   }, [fetchOrders])
+
+  const handleSelectionChange = (selectedIds: any[]) => {
+    setSelectedItems(selectedIds)
+  }
 
   const total = pagination?.totalRecords ?? 0
   const hasNextPage = pagination?.hasNextPage ?? false
@@ -297,7 +302,9 @@ function OrdersPage() {
           data={orders}
           columns={columns}
           totalCount={orders.length}
+          selectable
           actions={(row) => actions({ row, onDelete: () => fetchOrders() })}
+          onSelectionChange={handleSelectionChange}
           isLoading={loading}
         />
       </div>

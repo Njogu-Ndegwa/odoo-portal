@@ -6,6 +6,7 @@ import AppProvider from "./app-provider";
 import "./css/style.css";
 import apolloClient from "@/lib/apollo-client";
 import { AuthProvider } from "@/lib/auth-context";
+import { SAProvider } from "@/lib/sa-context";
 import { AlertProvider } from "./contexts/alertContext";
 const inter = Inter({
   subsets: ["latin"],
@@ -30,7 +31,7 @@ export default function RootLayout({
           <AppProvider>
             <ApolloProvider client={apolloClient}>
               <AlertProvider>
-              <AuthProvider>{children}</AuthProvider>
+              <AuthProvider><SAProvider>{children}</SAProvider></AuthProvider>
               </AlertProvider>
             </ApolloProvider>
           </AppProvider>

@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   SALES_USER_DATA: 'oves-sales-data',
   SALES_ACCESS_TOKEN: 'oves-sales-token',
   SALES_TOKEN_EXPIRES: 'oves-sales-token-expires',
+  SA_ID: 'oves-sa-id',
+  SA_DATA: 'oves-sa-data',
 } as const;
 
 // ============================================================================
@@ -152,6 +154,8 @@ export function clearSalesLogin(): void {
   localStorage.removeItem(STORAGE_KEYS.SALES_USER_DATA);
   localStorage.removeItem(STORAGE_KEYS.SALES_ACCESS_TOKEN);
   localStorage.removeItem(STORAGE_KEYS.SALES_TOKEN_EXPIRES);
+  localStorage.removeItem(STORAGE_KEYS.SA_ID);
+  localStorage.removeItem(STORAGE_KEYS.SA_DATA);
 }
 
 export function isSalesLoggedIn(): boolean {
@@ -182,6 +186,41 @@ export function getSalesUser(): EmployeeUser | null {
   if (!data) return null;
   try {
     return JSON.parse(data) as EmployeeUser;
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
+// Serviced Account selection persistence
+// ============================================================================
+
+import type { ServiceAccount } from '@/lib/sa-types';
+
+export function saveSelectedSA(sa: ServiceAccount): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(STORAGE_KEYS.SA_ID, String(sa.id));
+  localStorage.setItem(STORAGE_KEYS.SA_DATA, JSON.stringify(sa));
+}
+
+export function clearSelectedSA(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(STORAGE_KEYS.SA_ID);
+  localStorage.removeItem(STORAGE_KEYS.SA_DATA);
+}
+
+export function getSelectedSAId(): number | null {
+  if (typeof window === 'undefined') return null;
+  const id = localStorage.getItem(STORAGE_KEYS.SA_ID);
+  return id ? Number(id) : null;
+}
+
+export function getSelectedSA(): ServiceAccount | null {
+  if (typeof window === 'undefined') return null;
+  const data = localStorage.getItem(STORAGE_KEYS.SA_DATA);
+  if (!data) return null;
+  try {
+    return JSON.parse(data) as ServiceAccount;
   } catch {
     return null;
   }

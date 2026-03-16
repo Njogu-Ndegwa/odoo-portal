@@ -5,6 +5,7 @@ import portalApolloClient from '@/lib/portal-apollo-client'
 import Logo from '@/components/ui/logo'
 import ThemeToggle from '@/components/theme-toggle'
 import DropdownProfile from '@/components/dropdown-profile'
+import SASwitcher from '@/components/sa-switcher'
 import { isAuth } from '@/lib/auth'
 
 function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +15,10 @@ function PortalLayout({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-30 border-b border-gray-200/80 dark:border-gray-700/60 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              <Logo />
+              <div className="flex items-center gap-4">
+                <Logo />
+                <SASwitcher />
+              </div>
               <div className="flex items-center gap-3">
                 <ThemeToggle />
                 <DropdownProfile align="right" />

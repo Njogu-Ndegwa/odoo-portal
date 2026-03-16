@@ -1,5 +1,6 @@
 import { fetchWithRetry, parseOdooResponse } from '@/lib/odoo-api'
 import { getSalesToken } from '@/lib/odoo-auth'
+import { buildOdooHeaders } from '@/lib/odoo-headers'
 import { formatCurrency } from '@/lib/portal/mock-orders'
 import type {
   OrderEntity,
@@ -14,21 +15,13 @@ import type {
 
 const ODOO_BASE_URL =
   process.env.NEXT_PUBLIC_ODOO_API_URL || 'https://crm-omnivoltaic.odoo.com'
-const ODOO_API_KEY =
-  process.env.NEXT_PUBLIC_ODOO_API_KEY || 'abs_connector_secret_key_2024'
 
 // ============================================================================
 // Auth helper
 // ============================================================================
 
 function authHeaders(): HeadersInit {
-  const token = getSalesToken()
-  const h: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-API-KEY': ODOO_API_KEY,
-  }
-  if (token) h['Authorization'] = `Bearer ${token}`
-  return h
+  return buildOdooHeaders(getSalesToken() ?? undefined)
 }
 
 // ============================================================================
