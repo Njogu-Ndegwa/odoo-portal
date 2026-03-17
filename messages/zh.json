@@ -617,7 +617,12 @@
       "welcome": "欢迎回来，{name}。请选择一个服务账户继续。",
       "noAccounts": "没有可用的服务账户。",
       "loadFailed": "加载服务账户失败。",
-      "lastUsed": "最近使用"
+      "lastUsed": "最近使用",
+      "noAccessTitle": "无服务账户",
+      "noAccessDescription": "您的账户没有分配任何服务账户。访问门户需要服务账户。",
+      "noAccessHint": "请联系您的组织管理员以申请访问权限。",
+      "signOut": "退出登录",
+      "tryAgain": "重试"
     },
     "orders": {
       "title": "订单",
@@ -739,7 +744,9 @@
       "sortOptions": {
         "default": "默认",
         "nameAZ": "名称 (A-Z)",
-        "dateNewest": "日期（最新）"
+        "dateNewest": "日期（最新）",
+        "updated": "更新（最新）",
+        "price": "价格（从高到低）"
       },
       "columns": {
         "name": "名称",
@@ -853,6 +860,11 @@
         "parent": "父级"
       },
       "deleteConfirm": "确定要删除此服务账户吗？此操作无法撤销。",
+      "actions": {
+        "addMember": "添加成员",
+        "addMemberTo": "将人员添加为 {name} 的成员",
+        "manageMembers": "管理成员"
+      },
       "detail": {
         "serviceAccount": "服务账户",
         "accountDetails": "账户详情",
@@ -861,12 +873,18 @@
         "class": "类别",
         "code": "代码",
         "parent": "父级",
+        "partner": "合作伙伴",
         "note": "备注",
         "saveChanges": "保存更改",
         "members": "成员",
         "addMember": "添加成员",
         "addExistingMember": "添加现有成员",
         "enrollNewPerson": "注册新人员",
+        "selectPerson": "人员",
+        "searchPerson": "选择人员…",
+        "searchPersonPlaceholder": "按姓名或邮箱搜索…",
+        "noPersonsFound": "未找到人员。",
+        "noEmail": "无邮箱",
         "partnerId": "合作伙伴ID",
         "role": "角色",
         "fullName": "全名",
@@ -902,6 +920,7 @@
         "memberColumns": {
           "name": "名称",
           "email": "邮箱",
+          "phone": "电话",
           "role": "角色",
           "state": "状态",
           "actions": "操作"
@@ -912,7 +931,8 @@
         "accountDetails": "账户详情",
         "nameRequired": "名称 *",
         "class": "类别",
-        "outlet": "网点",
+        "ovac": "OVAC（OV 账户）",
+        "extc": "EXTC（外部公司）",
         "partnerIdRequired": "合作伙伴ID *",
         "parentId": "父级ID",
         "accountCode": "账户代码",

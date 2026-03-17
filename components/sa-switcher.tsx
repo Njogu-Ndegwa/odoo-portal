@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   Menu,
   MenuButton,
@@ -18,7 +17,6 @@ const roleBadge: Record<string, { label: string; cls: string }> = {
 };
 
 export default function SASwitcher() {
-  const router = useRouter();
   const { currentSA, serviceAccounts, selectSA } = useSA();
 
   if (!currentSA) return null;
@@ -42,7 +40,6 @@ export default function SASwitcher() {
     if (!sa || sa.id === currentSA?.id) return;
     selectSA(sa);
     portalApolloClient.clearStore();
-    router.refresh();
   }
 
   return (

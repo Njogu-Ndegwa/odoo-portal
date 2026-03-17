@@ -1,18 +1,15 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { useSA } from '@/lib/sa-context'
 import { getServiceAccount, updateServiceAccount } from '@/lib/sa-api'
 import type { SADetail } from '@/lib/sa-types'
 import { useAlert } from '@/app/contexts/alertContext'
 
 export default function ServiceAccountDetailPage() {
   const params = useParams()
-  const router = useRouter()
-  const { isAdmin } = useSA()
   const { alert } = useAlert()
   const saId = Number(params.id)
 
@@ -46,10 +43,6 @@ export default function ServiceAccountDetailPage() {
     fetchSA().finally(() => setLoading(false))
   }, [fetchSA])
 
-  useEffect(() => {
-    if (!isAdmin) router.push('/portal')
-  }, [isAdmin, router])
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!editName.trim()) return
@@ -64,8 +57,6 @@ export default function ServiceAccountDetailPage() {
       setSaving(false)
     }
   }
-
-  if (!isAdmin) return null
 
   if (loading) {
     return (

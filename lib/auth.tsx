@@ -102,10 +102,10 @@ export const useMenuVisibility = () => {
 
   const menuPermissions: Record<string, string[]> = {
     admin: ['dashboard', 'accounts', 'thing', 'staff', 'service-accounts'],
-    staff: ['dashboard', 'accounts', 'thing', 'staff'],
-    agent: ['dashboard', 'accounts', 'thing'],
-    salesrep: ['dashboard', 'accounts', 'thing', 'staff'],
-    salesattendant: ['dashboard', 'accounts', 'thing', 'staff'],
+    staff: ['dashboard', 'accounts', 'thing', 'staff', 'service-accounts'],
+    agent: ['dashboard', 'accounts', 'thing', 'service-accounts'],
+    salesrep: ['dashboard', 'accounts', 'thing', 'staff', 'service-accounts'],
+    salesattendant: ['dashboard', 'accounts', 'thing', 'staff', 'service-accounts'],
   };
 
   const canViewMenu = (menuId: string): boolean => {

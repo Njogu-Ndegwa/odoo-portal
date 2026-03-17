@@ -8,8 +8,11 @@ import LanguageSwitcher from '@/components/language-switcher'
 import DropdownProfile from '@/components/dropdown-profile'
 import SASwitcher from '@/components/sa-switcher'
 import { isAuth } from '@/lib/auth'
+import { useSA } from '@/lib/sa-context'
 
 function PortalLayout({ children }: { children: React.ReactNode }) {
+  const { currentSA } = useSA()
+
   return (
     <ApolloProvider client={portalApolloClient}>
       <div className="flex flex-col h-[100dvh] bg-gradient-to-br from-gray-50 via-violet-50/40 to-gray-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
@@ -29,7 +32,7 @@ function PortalLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="grow overflow-y-auto">
+        <main className="grow overflow-y-auto" key={currentSA?.id ?? 'no-sa'}>
           {children}
         </main>
       </div>

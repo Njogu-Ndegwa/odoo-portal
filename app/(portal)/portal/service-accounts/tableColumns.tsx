@@ -64,10 +64,3 @@ export function useServiceAccountColumns() {
     },
     ] as TableColumn<any>[]
 }
-
-export const dropdownOptions = [
-    {
-        id: 0,
-        value: 'Delete Selected'
-    },
-]

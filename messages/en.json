@@ -617,7 +617,12 @@
       "welcome": "Welcome back, {name}. Choose a service account to continue.",
       "noAccounts": "No service accounts available.",
       "loadFailed": "Failed to load service accounts.",
-      "lastUsed": "Last used"
+      "lastUsed": "Last used",
+      "noAccessTitle": "No Service Account",
+      "noAccessDescription": "Your account does not have any service accounts assigned to it. A service account is required to access the portal.",
+      "noAccessHint": "Please contact your organization administrator to request access.",
+      "signOut": "Sign Out",
+      "tryAgain": "Try Again"
     },
     "orders": {
       "title": "Orders",

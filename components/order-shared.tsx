@@ -62,8 +62,8 @@ export function CustomerInfoRowSkeleton() {
   )
 }
 
-export function CategoryBadge({ category }: { category: string | null }) {
-  const isPhysical = category?.toLowerCase() === 'physical'
+export function CategoryBadge({ category }: { category: string | null | false }) {
+  const isPhysical = (typeof category === 'string' ? category.toLowerCase() : '') === 'physical'
   return (
     <span
       className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${

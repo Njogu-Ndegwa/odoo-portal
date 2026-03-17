@@ -21,6 +21,7 @@ import { useAlert } from '@/app/contexts/alertContext'
 import { getSalesUser } from '@/lib/odoo-auth'
 import { formatCurrency } from '@/lib/portal/mock-orders'
 import { CategoryBadge, OrderSummary, LinesTable } from '@/components/order-shared'
+import { useSA } from '@/lib/sa-context'
 import type { OrderEntity, OrderLineEntity } from '@/lib/portal/types'
 
 export function StepSend({ order, onSend }: { order: OrderEntity; onSend: () => void }) {
@@ -258,10 +259,12 @@ export function StepApproval({
   onSendProforma: () => Promise<void> | void
 }) {
   const { alert } = useAlert()
+  const { isAdmin } = useSA()
   const approval = order.approval
   const isApproved = order.approvalStatus === 'approved'
   const isPending = order.approvalStatus === 'pending'
   const isNone = order.approvalStatus === 'none'
+  const canApprove = isAdmin
 
   const [approvalNotes, setApprovalNotes] = useState('')
   const [actionLoading, setActionLoading] = useState<'submit' | 'approve' | 'reject' | null>(null)
@@ -365,8 +368,8 @@ export function StepApproval({
             </div>
           )}
 
-          {/* State: pending — approve / reject */}
-          {isPending && (
+          {/* State: pending — admin: approve / reject; others: read-only waiting */}
+          {isPending && canApprove && (
             <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700/60 overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Review & Decide</h3>
@@ -428,6 +431,42 @@ export function StepApproval({
                       <><X className="w-4 h-4" /> Reject</>
                     )}
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isPending && !canApprove && (
+            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-amber-200 dark:border-amber-800/60 overflow-hidden">
+              <div className="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/60 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-amber-500 dark:bg-amber-600 flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">Awaiting Manager Approval</h3>
+                  <p className="text-xs text-amber-700/80 dark:text-amber-400/80">
+                    Submitted by {approval?.submittedBy || getSalesUser()?.name || '—'}
+                    {approval?.submittedAt
+                      ? ` on ${new Date(approval.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                      : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between px-3.5 py-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800/50">
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-green-600 dark:text-green-400">Order Total</span>
+                  <span className="text-base font-extrabold tabular-nums text-green-600 dark:text-green-400">{formatCurrency(order.amountTotal)}</span>
+                </div>
+
+                <div className="px-3.5 py-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-600/50">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <ShieldCheck className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Approval Status</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    This order is pending management approval. You&apos;ll be notified once a decision is made.
+                  </p>
                 </div>
               </div>
             </div>

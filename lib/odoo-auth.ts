@@ -211,12 +211,14 @@ export function clearSelectedSA(): void {
 
 export function getSelectedSAId(): number | null {
   if (typeof window === 'undefined') return null;
+  if (!isSalesLoggedIn()) return null;
   const id = localStorage.getItem(STORAGE_KEYS.SA_ID);
   return id ? Number(id) : null;
 }
 
 export function getSelectedSA(): ServiceAccount | null {
   if (typeof window === 'undefined') return null;
+  if (!isSalesLoggedIn()) return null;
   const data = localStorage.getItem(STORAGE_KEYS.SA_DATA);
   if (!data) return null;
   try {

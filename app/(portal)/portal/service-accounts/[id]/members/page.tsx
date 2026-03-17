@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { useSA } from '@/lib/sa-context'
+import { useApolloClient } from '@apollo/client'
 import {
   getServiceAccount,
   getMembers,
@@ -13,8 +13,8 @@ import {
   updateMember,
   removeMember,
 } from '@/lib/sa-api'
-import { getContacts, type OdooContact, type ContactsListApiResponse } from '@/lib/odoo-api'
-import { getSalesToken } from '@/lib/odoo-auth'
+import { CUSTOMERS_QUERY } from '@/lib/portal/queries'
+import type { CustomersListResponse, CustomersFilterInput, CustomerEntity } from '@/lib/portal/types'
 import type {
   SADetail,
   SAMember,
@@ -29,12 +29,12 @@ import { useAlert } from '@/app/contexts/alertContext'
 interface PersonOption {
   id: number
   name: string
-  email: string | false
-  phone: string | false
+  email: string | null
+  phone: string | null
 }
 
-function mapContactToPerson(c: OdooContact): PersonOption {
-  return { id: c.id, name: c.name, email: c.email, phone: c.phone }
+function mapCustomerToPerson(c: CustomerEntity): PersonOption {
+  return { id: Number(c.id), name: c.name, email: c.email, phone: c.phone }
 }
 
 const DROPDOWN_PAGE_SIZE = 20
@@ -53,8 +53,7 @@ const memberStateBadge: Record<string, string> = {
 
 export default function ServiceAccountMembersPage() {
   const params = useParams()
-  const router = useRouter()
-  const { isAdmin } = useSA()
+  const apolloClient = useApolloClient()
   const { alert } = useAlert()
   const saId = Number(params.id)
 
@@ -108,10 +107,6 @@ export default function ServiceAccountMembersPage() {
     Promise.all([fetchSA(), fetchMembers()]).finally(() => setLoading(false))
   }, [fetchSA, fetchMembers])
 
-  useEffect(() => {
-    if (!isAdmin) router.push('/portal')
-  }, [isAdmin, router])
-
   // Person search: debounce
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedPersonSearch(personSearch), 300)
@@ -140,15 +135,22 @@ export default function ServiceAccountMembersPage() {
     const fetchData = async () => {
       setPersonsLoading(true)
       try {
-        const token = getSalesToken()
-        const result: ContactsListApiResponse = await getContacts(
-          { q: debouncedPersonSearch || undefined, type: 'individual', page: personPage, limit: DROPDOWN_PAGE_SIZE },
-          token || undefined,
-        )
+        const filters: CustomersFilterInput = {
+          page: personPage,
+          limit: DROPDOWN_PAGE_SIZE,
+        }
+        if (debouncedPersonSearch.trim()) {
+          filters.search = debouncedPersonSearch.trim()
+        }
+        const { data } = await apolloClient.query<CustomersListResponse>({
+          query: CUSTOMERS_QUERY,
+          variables: { filters },
+          fetchPolicy: 'network-only',
+        })
         if (cancelled) return
-        const mapped = result.contacts.map(mapContactToPerson)
+        const mapped = data.customers.data.map(mapCustomerToPerson)
         setAccumulatedPersons((prev) => personPage === 1 ? mapped : [...prev, ...mapped])
-        setPersonHasMore(result.pagination.has_next_page)
+        setPersonHasMore(data.customers.pagination.hasNextPage)
       } catch {
         if (!cancelled) setPersonHasMore(false)
       } finally {
@@ -157,7 +159,7 @@ export default function ServiceAccountMembersPage() {
     }
     fetchData()
     return () => { cancelled = true }
-  }, [personDropdownOpen, debouncedPersonSearch, personPage])
+  }, [personDropdownOpen, debouncedPersonSearch, personPage, apolloClient])
 
   const handlePersonLoadMore = useCallback(() => {
     if (!personsLoading && personHasMore) setPersonPage((p) => p + 1)
@@ -277,8 +279,6 @@ export default function ServiceAccountMembersPage() {
       {t('revoke')}
     </button>
   )
-
-  if (!isAdmin) return null
 
   if (loading) {
     return (

@@ -5,11 +5,10 @@ import {
   employeeLogin,
   getSalesUser,
   clearSalesLogin,
-  clearSelectedSA,
-  saveSelectedSA,
   type EmployeeUser,
 } from "@/lib/odoo-auth";
 import { fetchMyServiceAccounts } from "@/lib/sa-api";
+import { useSA } from "@/lib/sa-context";
 import type { ServiceAccount } from "@/lib/sa-types";
 
 interface AuthContextType {
@@ -32,10 +31,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [error, setError] = useState<string | null>(null);
   const [pendingSAs, setPendingSAs] = useState<ServiceAccount[]>([]);
   const router = useRouter();
+  const { selectSA, clearSA, setServiceAccounts } = useSA();
 
   const signIn = async (credentials: { email: string; password: string }) => {
     setLoading(true);
     setError(null);
+    clearSA();
     try {
       const result = await employeeLogin(credentials.email, credentials.password);
       if (!result.success || !result.user) {
@@ -56,19 +57,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         const accounts = saRes.service_accounts ?? [];
 
         if (accounts.length === 0) {
-          setError("No service accounts available for this user.");
+          router.push("/portal/select-sa");
           return;
         }
 
+        setServiceAccounts(accounts);
+
         if (accounts.length === 1 && saRes.auto_selected) {
-          saveSelectedSA(accounts[0]);
+          selectSA(accounts[0]);
           router.push("/portal");
         } else {
           setPendingSAs(accounts);
           router.push("/portal/select-sa");
         }
       } catch {
-        router.push("/portal");
+        router.push("/portal/select-sa");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
@@ -79,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const signOut = () => {
     clearSalesLogin();
-    clearSelectedSA();
+    clearSA();
     setUser(null);
     setPendingSAs([]);
     router.push("/signin");

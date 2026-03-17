@@ -617,7 +617,12 @@
       "welcome": "Bon retour, {name}. Choisissez un compte de service pour continuer.",
       "noAccounts": "Aucun compte de service disponible.",
       "loadFailed": "Échec du chargement des comptes de service.",
-      "lastUsed": "Dernière utilisation"
+      "lastUsed": "Dernière utilisation",
+      "noAccessTitle": "Aucun compte de service",
+      "noAccessDescription": "Votre compte n'a aucun compte de service attribué. Un compte de service est requis pour accéder au portail.",
+      "noAccessHint": "Veuillez contacter l'administrateur de votre organisation pour demander l'accès.",
+      "signOut": "Se déconnecter",
+      "tryAgain": "Réessayer"
     },
     "orders": {
       "title": "Commandes",
@@ -739,7 +744,9 @@
       "sortOptions": {
         "default": "Par défaut",
         "nameAZ": "Nom (A-Z)",
-        "dateNewest": "Date (plus récent)"
+        "dateNewest": "Date (plus récent)",
+        "updated": "Mise à jour (plus récent)",
+        "price": "Prix (décroissant)"
       },
       "columns": {
         "name": "Nom",
@@ -853,6 +860,11 @@
         "parent": "Parent"
       },
       "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce compte de service ? Cette action est irréversible.",
+      "actions": {
+        "addMember": "Ajouter un membre",
+        "addMemberTo": "Ajouter une personne en tant que membre de {name}",
+        "manageMembers": "Gérer les membres"
+      },
       "detail": {
         "serviceAccount": "Compte de service",
         "accountDetails": "Détails du compte",
@@ -861,12 +873,18 @@
         "class": "Classe",
         "code": "Code",
         "parent": "Parent",
+        "partner": "Partenaire",
         "note": "Note",
         "saveChanges": "Enregistrer les modifications",
         "members": "Membres",
         "addMember": "Ajouter un membre",
         "addExistingMember": "Ajouter un membre existant",
         "enrollNewPerson": "Inscrire une nouvelle personne",
+        "selectPerson": "Personne",
+        "searchPerson": "Sélectionner une personne…",
+        "searchPersonPlaceholder": "Rechercher par nom ou e-mail…",
+        "noPersonsFound": "Aucune personne trouvée.",
+        "noEmail": "Pas d'e-mail",
         "partnerId": "ID partenaire",
         "role": "Rôle",
         "fullName": "Nom complet",
@@ -902,6 +920,7 @@
         "memberColumns": {
           "name": "Nom",
           "email": "E-mail",
+          "phone": "Téléphone",
           "role": "Rôle",
           "state": "État",
           "actions": "Actions"
@@ -912,7 +931,8 @@
         "accountDetails": "Détails du compte",
         "nameRequired": "Nom *",
         "class": "Classe",
-        "outlet": "Point de vente",
+        "ovac": "OVAC (Compte OV)",
+        "extc": "EXTC (Société externe)",
         "partnerIdRequired": "ID partenaire *",
         "parentId": "ID parent",
         "accountCode": "Code du compte",

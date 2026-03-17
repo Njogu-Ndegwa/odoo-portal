@@ -164,7 +164,7 @@ const applets: Applet[] = [
     href: '/portal/service-accounts',
     gradient: 'from-violet-600 to-violet-700',
     enabled: true,
-    adminOnly: true,
+    adminOnly: false,
     icon: (
       <svg className="w-9 h-9" viewBox="0 0 48 48" fill="none">
         <rect x="6" y="8" width="36" height="32" rx="6" fill="white" fillOpacity={0.3} />

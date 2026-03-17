@@ -14,9 +14,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <AppProvider>
         <ApolloProvider client={apolloClient}>
           <AlertProvider>
-            <AuthProvider>
-              <SAProvider>{children}</SAProvider>
-            </AuthProvider>
+            <SAProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </SAProvider>
           </AlertProvider>
         </ApolloProvider>
       </AppProvider>

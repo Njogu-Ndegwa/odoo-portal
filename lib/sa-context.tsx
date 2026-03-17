@@ -40,6 +40,17 @@ export const SAProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [serviceAccounts, setServiceAccounts] = useState<ServiceAccount[]>([]);
   const fetchedRef = useRef(false);
 
+  // Re-read from localStorage after hydration — the useState initializer runs
+  // during SSR where window is undefined (returns null), and React reuses that
+  // server state during client hydration without re-running the initializer.
+  useEffect(() => {
+    const stored = readSAFromStorage();
+    if (stored && !currentSA) {
+      setCurrentSA(stored);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const selectSA = useCallback((sa: ServiceAccount) => {
     saveSelectedSA(sa);
     setCurrentSA(sa);
@@ -48,6 +59,8 @@ export const SAProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const clearSA = useCallback(() => {
     clearSelectedSA();
     setCurrentSA(null);
+    setServiceAccounts([]);
+    fetchedRef.current = false;
   }, []);
 
   const refreshSAs = useCallback(async (): Promise<ServiceAccount[]> => {

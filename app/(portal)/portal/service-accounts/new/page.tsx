@@ -11,7 +11,7 @@ import { useAlert } from '@/app/contexts/alertContext'
 
 export default function ServiceAccountCreatePage() {
   const router = useRouter()
-  const { isAdmin, currentSA } = useSA()
+  const { currentSA } = useSA()
   const { alert } = useAlert()
 
   const t = useTranslations('portal.serviceAccounts.new')
@@ -68,11 +68,6 @@ export default function ServiceAccountCreatePage() {
     } finally {
       setSaving(false)
     }
-  }
-
-  if (!isAdmin) {
-    router.push('/portal')
-    return null
   }
 
   return (

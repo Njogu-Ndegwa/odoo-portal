@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import Table from '@/components/table/table'
 import DynamicDropdown from '@/components/dropdown-dynamic'
 import DateSelect from '@/components/date-select'
@@ -14,17 +13,10 @@ import PageSizeSelect from '@/components/page-size-select'
 import { useTranslations } from 'next-intl'
 import { SelectedItemsProvider, useSelectedItems } from '@/app/selected-items-context'
 import { useAlert } from '@/app/contexts/alertContext'
-import { useSA } from '@/lib/sa-context'
 import { getServiceAccounts, deleteServiceAccount } from '@/lib/sa-api'
 import type { SADetail, GetServiceAccountsParams, SAState } from '@/lib/sa-types'
 import { useServiceAccountColumns } from './tableColumns'
 import { actions } from './tableActions'
-
-const sortOptions = [
-  { value: '', label: 'Default' },
-  { value: 'name', label: 'Name (A-Z)' },
-  { value: 'name_desc', label: 'Name (Z-A)' },
-]
 
 type StateFilter = 'all' | 'active' | 'inactive'
 
@@ -37,8 +29,6 @@ export default function ServiceAccountsPageWrapper() {
 }
 
 function ServiceAccountsPage() {
-  const router = useRouter()
-  const { isAdmin, hasSA } = useSA()
   const { alert } = useAlert()
   const { selectedItems, setSelectedItems } = useSelectedItems()
   const t = useTranslations('portal.serviceAccounts')
@@ -72,10 +62,6 @@ function ServiceAccountsPage() {
   const [customDateRange, setCustomDateRange] = useState<{ from: string; to: string } | null>(null)
   const [advancedFilters, setAdvancedFilters] = useState<Record<string, boolean>>({})
   const [sortValue, setSortValue] = useState('')
-
-  useEffect(() => {
-    if (hasSA && !isAdmin) router.push('/portal')
-  }, [isAdmin, hasSA, router])
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500)
@@ -160,8 +146,6 @@ function ServiceAccountsPage() {
     { key: 'active', label: t('states.active') },
     { key: 'inactive', label: t('states.inactive') },
   ]
-
-  if (hasSA && !isAdmin) return null
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
