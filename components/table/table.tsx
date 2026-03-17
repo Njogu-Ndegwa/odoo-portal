@@ -1,5 +1,6 @@
 'use client'
-// Update your type definitions in types.ts
+import { useTranslations } from 'next-intl'
+
 export interface NodeWithId {
   _id: string;
   [key: string]: any;
@@ -98,6 +99,7 @@ function TableRow<T extends TableItemWithNode>({
   onCheckboxChange,
   actions
 }: TableRowProps<T>) {
+  const t = useTranslations('table')
 
   const getActualId = () => {
     if (item.node && item.node._id) {
@@ -153,7 +155,7 @@ function TableRow<T extends TableItemWithNode>({
         <td className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
           <div className="flex items-center">
             <label className="inline-flex">
-              <span className="sr-only">Select</span>
+              <span className="sr-only">{t('select')}</span>
               <input
                 type="checkbox"
                 className="form-checkbox"
@@ -199,9 +201,12 @@ export default function Table<T extends TableItemWithNode>({
   actions,
   onSelectionChange,
   isLoading = false,
-  emptyMessage = "No data available",
-  emptyDescription = "Try adjusting your search or filter to find what you're looking for."
+  emptyMessage,
+  emptyDescription,
 }: TableProps<T>) {
+  const t = useTranslations('table')
+  const resolvedEmptyMessage = emptyMessage ?? t('noData')
+  const resolvedEmptyDescription = emptyDescription ?? t('noDataDescription')
 
   const validData = data.filter(item => {
     // Keep items that don't have a node property or have a valid node
@@ -249,7 +254,7 @@ export default function Table<T extends TableItemWithNode>({
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
                     <div className="flex items-center">
                       <label className="inline-flex">
-                        <span className="sr-only">Select all</span>
+                        <span className="sr-only">{t('selectAll')}</span>
                         <input
                           type="checkbox"
                           className="form-checkbox"
@@ -270,7 +275,7 @@ export default function Table<T extends TableItemWithNode>({
 
                 {actions && (
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap sticky right-0 bg-gray-50 dark:bg-gray-900/20 z-10 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.1)]">
-                    <div className="font-semibold text-left">Actions</div>
+                    <div className="font-semibold text-left">{t('actions')}</div>
                   </th>
                 )}
               </tr>
@@ -311,9 +316,9 @@ export default function Table<T extends TableItemWithNode>({
                           d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" 
                         />
                       </svg>
-                      <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{emptyMessage}</h3>
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{resolvedEmptyMessage}</h3>
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        {emptyDescription}
+                        {resolvedEmptyDescription}
                       </p>
                     </div>
                   </td>

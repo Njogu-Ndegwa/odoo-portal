@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Table from '@/components/table/table'
 import DateSelect from '@/components/date-select'
@@ -11,7 +12,7 @@ import SearchForm from '@/components/search-form'
 import PaginationClassic from '@/components/pagination-classic'
 import PageSizeSelect from '@/components/page-size-select'
 import { SelectedItemsProvider, useSelectedItems } from '@/app/selected-items-context'
-import { columns } from './tableColumns'
+import { useOrderColumns } from './tableColumns'
 import { actions } from './tableActions'
 import { getOrders, type GetOrdersParams } from '@/lib/portal/order-api'
 import type { OrderState, OrderEntity, PaginationMeta } from '@/lib/portal/types'
@@ -37,46 +38,6 @@ function getDateOffset(optionId: number): string | undefined {
 
 type StateFilter = 'all' | OrderState
 
-const statePills: { key: StateFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'draft', label: 'Draft' },
-  { key: 'sent', label: 'Sent' },
-  { key: 'sale', label: 'Confirmed' },
-  { key: 'done', label: 'Done' },
-  { key: 'cancel', label: 'Cancelled' },
-]
-
-const sortOptions = [
-  { value: '', label: 'Default' },
-  { value: 'date', label: 'Date (newest)' },
-  { value: 'date_asc', label: 'Date (oldest)' },
-  { value: 'updated', label: 'Updated (newest)' },
-  { value: 'updated_asc', label: 'Updated (oldest)' },
-  { value: 'amount', label: 'Amount (high)' },
-  { value: 'amount_asc', label: 'Amount (low)' },
-  { value: 'name', label: 'Name' },
-  { value: 'customer', label: 'Customer' },
-]
-
-const approvalOptions = [
-  { value: '', label: 'All Approvals' },
-  { value: 'not_required', label: 'Not Required' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'rejected', label: 'Rejected' },
-]
-
-const paymentOptions = [
-  { value: '', label: 'All Payments' },
-  { value: 'paid', label: 'Paid' },
-  { value: 'unpaid', label: 'Unpaid' },
-  { value: 'partial', label: 'Partial' },
-]
-
-const advancedFilterDefs: FilterDefinition[] = [
-  { key: 'mine', label: 'My orders only' },
-]
-
 export default function OrdersPageWrapper() {
   return (
     <SelectedItemsProvider>
@@ -86,7 +47,51 @@ export default function OrdersPageWrapper() {
 }
 
 function OrdersPage() {
+  const t = useTranslations('portal.orders')
+  const tp = useTranslations('portal')
+  const columns = useOrderColumns()
   const { setSelectedItems } = useSelectedItems()
+
+  const statePills: { key: StateFilter; label: string }[] = [
+    { key: 'all', label: t('states.all') },
+    { key: 'draft', label: t('states.draft') },
+    { key: 'sent', label: t('states.sent') },
+    { key: 'sale', label: t('states.confirmed') },
+    { key: 'done', label: t('states.done') },
+    { key: 'cancel', label: t('states.cancelled') },
+  ]
+
+  const sortOptions = [
+    { value: '', label: t('sortOptions.default') },
+    { value: 'date', label: t('sortOptions.dateNewest') },
+    { value: 'date_asc', label: t('sortOptions.dateOldest') },
+    { value: 'updated', label: 'Updated (newest)' },
+    { value: 'updated_asc', label: 'Updated (oldest)' },
+    { value: 'amount', label: 'Amount (high)' },
+    { value: 'amount_asc', label: 'Amount (low)' },
+    { value: 'name', label: 'Name' },
+    { value: 'customer', label: 'Customer' },
+  ]
+
+  const approvalOptions = [
+    { value: '', label: t('approval.all') },
+    { value: 'not_required', label: t('approval.notRequired') },
+    { value: 'pending', label: t('approval.pending') },
+    { value: 'approved', label: t('approval.approved') },
+    { value: 'rejected', label: t('approval.rejected') },
+  ]
+
+  const paymentOptions = [
+    { value: '', label: t('payment.all') },
+    { value: 'paid', label: t('payment.paid') },
+    { value: 'unpaid', label: t('payment.unpaid') },
+    { value: 'partial', label: t('payment.partial') },
+  ]
+
+  const advancedFilterDefs: FilterDefinition[] = [
+    { key: 'mine', label: t('myOrdersOnly') },
+  ]
+
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [page, setPage] = useState(1)
@@ -180,25 +185,25 @@ function OrdersPage() {
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        <Link href="/portal" className="hover:text-violet-500">Portal</Link>
+        <Link href="/portal" className="hover:text-violet-500">{tp('portal')}</Link>
         <span className="mx-2">/</span>
-        <span className="text-gray-800 dark:text-gray-100 font-medium">Orders</span>
+        <span className="text-gray-800 dark:text-gray-100 font-medium">{t('title')}</span>
       </nav>
 
       {/* Header */}
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
         <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-            Orders
+            {t('title')}
           </h1>
         </div>
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-          <SearchForm placeholder="Search orders…" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+          <SearchForm placeholder={t('searchOrders')} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           <DropdownSelect
             options={sortOptions}
             selected={sortValue}
             onChange={setSortValue}
-            placeholder="Sort"
+            placeholder={t('sort')}
             align="right"
             icon={
               <svg className="fill-current text-gray-400 dark:text-gray-500" width="16" height="16" viewBox="0 0 16 16">
@@ -213,7 +218,7 @@ function OrdersPage() {
             <svg className="fill-current shrink-0 xs:hidden" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
               <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
             </svg>
-            <span className="max-xs:sr-only">Create Order</span>
+            <span className="max-xs:sr-only">{t('createOrder')}</span>
           </Link>
         </div>
       </div>
@@ -271,11 +276,11 @@ function OrdersPage() {
             renderExtra={() => (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">Amount Range</label>
+                  <label className="block text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">{t('amountRange')}</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      placeholder="Min"
+                      placeholder={t('min')}
                       value={amountMin}
                       onChange={(e) => setAmountMin(e.target.value)}
                       className="form-input w-full text-sm py-1"
@@ -283,7 +288,7 @@ function OrdersPage() {
                     <span className="text-gray-400">–</span>
                     <input
                       type="number"
-                      placeholder="Max"
+                      placeholder={t('max')}
                       value={amountMax}
                       onChange={(e) => setAmountMax(e.target.value)}
                       className="form-input w-full text-sm py-1"

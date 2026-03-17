@@ -2,6 +2,7 @@
 
 import ModalBlank from '@/components/modal-blank'
 import { ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 
 type ModalVariant = 'success' | 'danger' | 'info'
 
@@ -23,11 +24,14 @@ export default function FeedbackModal({
   variant = 'info',
   title,
   content,
-  cancelButtonLabel = 'Cancel',
-  confirmButtonLabel = 'Confirm',
+  cancelButtonLabel,
+  confirmButtonLabel,
   onConfirm,
   onCancel,
 }: FeedbackModalProps) {
+  const t = useTranslations('modal')
+  const resolvedCancel = cancelButtonLabel ?? t('cancel')
+  const resolvedConfirm = confirmButtonLabel ?? t('confirm')
   const getIcon = () => {
     const iconClass = 'shrink-0 fill-current'
     const containerClass = 'w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-gray-100 dark:bg-gray-700'
@@ -111,13 +115,13 @@ export default function FeedbackModal({
               className="btn-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300"
               onClick={handleCancel}
             >
-              {cancelButtonLabel}
+              {resolvedCancel}
             </button>
             <button 
               className={`btn-sm ${getConfirmButtonStyle()}`}
               onClick={handleConfirm}
             >
-              {confirmButtonLabel}
+              {resolvedConfirm}
             </button>
           </div>
         </div>

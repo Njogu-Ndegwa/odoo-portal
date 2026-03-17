@@ -8,6 +8,7 @@ import { useCustomerForm } from './useCustomerForm';
 import { useAlert } from '@/app/contexts/alertContext';
 // import { PersonInterface } from '../../types';
 import { Person } from '../types/Person';
+import { useTranslations } from 'next-intl';
 
 interface FormCustomerProps {
   editData?: Person | null; // Add prop for edit data
@@ -15,8 +16,10 @@ interface FormCustomerProps {
 
  export default function FormCustomer({ editData }: FormCustomerProps) {
   const router = useRouter();
-  const [isEditing] = useState(!!editData); // Determine if in edit mode
+  const [isEditing] = useState(!!editData);
   const { alert } = useAlert();
+  const t = useTranslations('customers');
+  const tc = useTranslations('common');
 
   const [formData, setFormData] = useState({
     name: editData?.name || '',
@@ -39,10 +42,10 @@ interface FormCustomerProps {
     personId: editData?._id,
     onSuccess: () => {
       router.back();
-      alert({ text: `Customer ${isEditing ? 'Updated' : 'Created'} Successfully`, type: "success" });
+      alert({ text: isEditing ? t('updatedSuccess') : t('createdSuccess'), type: "success" });
     },
     onError: () => {
-      alert({ text: `There was a problem ${isEditing ? 'Updating' : 'Creating'} the Customer`, type: "error" });
+      alert({ text: isEditing ? t('updateError') : t('createError'), type: "error" });
     }
   });
 
@@ -69,10 +72,10 @@ interface FormCustomerProps {
           className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-3"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          <span>Back</span>
+          <span>{tc('back')}</span>
         </button>
         <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-          {isEditing ? 'Edit Customer' : 'Create a Customer'}
+          {isEditing ? t('editCustomer') : t('createCustomer')}
         </h1>
       </div>
 
@@ -86,7 +89,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="name">
-                  Name
+                  {t('customerForm.name')}
                 </label>
                 <input
                   id="name"
@@ -103,7 +106,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="email">
-                  Email
+                  {t('customerForm.email')}
                 </label>
                 <input
                   id="email"
@@ -120,7 +123,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="phone">
-                  Phone
+                  {t('customerForm.phone')}
                 </label>
                 <input
                   id="phone"
@@ -137,7 +140,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="social">
-                  Social
+                  {t('customerForm.social')}
                 </label>
                 <input
                   id="social"
@@ -153,7 +156,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="city">
-                  City
+                  {t('customerForm.city')}
                 </label>
                 <input
                   id="city"
@@ -170,7 +173,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="country">
-                  Country
+                  {t('customerForm.country')}
                 </label>
                 <input
                   id="country"
@@ -187,7 +190,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="postCode">
-                  Post Code
+                  {t('customerForm.postCode')}
                 </label>
                 <input
                   id="postCode"
@@ -204,7 +207,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="srpc">
-                  SRPC
+                  {t('customerForm.srpc')}
                 </label>
                 <input
                   id="srpc"
@@ -221,7 +224,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="street">
-                  Street
+                  {t('customerForm.street')}
                 </label>
                 <input
                   id="street"
@@ -238,7 +241,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="unit">
-                  Unit
+                  {t('customerForm.unit')}
                 </label>
                 <input
                   id="unit"
@@ -255,7 +258,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="longitude">
-                  Longitude
+                  {t('customerForm.longitude')}
                 </label>
                 <input
                   id="longitude"
@@ -271,7 +274,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="latitude">
-                  Latitude
+                  {t('customerForm.latitude')}
                 </label>
                 <input
                   id="latitude"
@@ -287,7 +290,7 @@ interface FormCustomerProps {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="description">
-                  Description
+                  {t('customerForm.description')}
                 </label>
                 {/* <textarea
                   id="description"
@@ -317,8 +320,8 @@ interface FormCustomerProps {
                     }`}
                 >
                   {isLoading
-                    ? `${isEditing ? 'Updating...' : 'Creating...'}`
-                    : `${isEditing ? 'Update' : 'Create'} Customer`}
+                    ? (isEditing ? tc('updating') : tc('creating'))
+                    : `${isEditing ? tc('update') : tc('create')} ${t('title')}`}
                 </button>
               </div>
             </div>

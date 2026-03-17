@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react'
 import { Calendar } from '@/components/ui/calendar'
 import { format } from 'date-fns'
@@ -11,13 +12,16 @@ export interface DateSelectOption {
   period: string;
 }
 
-const defaultOptions: DateSelectOption[] = [
-  { id: 0, period: 'Today' },
-  { id: 1, period: 'Last 7 Days' },
-  { id: 2, period: 'Last Month' },
-  { id: 3, period: 'Last 12 Months' },
-  { id: 4, period: 'All Time' },
-]
+function useDefaultOptions(): DateSelectOption[] {
+  const t = useTranslations('dateSelect')
+  return [
+    { id: 0, period: t('today') },
+    { id: 1, period: t('last7Days') },
+    { id: 2, period: t('lastMonth') },
+    { id: 3, period: t('last12Months') },
+    { id: 4, period: t('allTime') },
+  ]
+}
 
 const CUSTOM_ID = -1
 
@@ -30,12 +34,15 @@ interface DateSelectProps {
 }
 
 export default function DateSelect({
-  options = defaultOptions,
+  options,
   selected: controlledSelected,
   onChange,
   onCustomRange,
   enableCustomRange = false,
 }: DateSelectProps = {}) {
+  const t = useTranslations('dateSelect')
+  const defaultOpts = useDefaultOptions()
+  if (!options) options = defaultOpts
 
   const [internalSelected, setInternalSelected] = useState<number>(options.length > 2 ? 2 : 0)
   const selected = controlledSelected !== undefined ? controlledSelected : internalSelected
@@ -80,7 +87,7 @@ export default function DateSelect({
   const displayLabel = (() => {
     if (selected === CUSTOM_ID && customLabel) return customLabel
     const opt = options.find(o => o.id === selected)
-    return opt?.period || options[0]?.period || 'Select'
+    return opt?.period || options[0]?.period || t('select')
   })()
 
   return (
@@ -134,7 +141,7 @@ export default function DateSelect({
                         <svg className={`shrink-0 mr-2 fill-current text-violet-500 ${selected !== CUSTOM_ID ? 'invisible' : ''}`} width="12" height="9" viewBox="0 0 12 9">
                           <path d="M10.28.28L3.989 6.575 1.695 4.28A1 1 0 00.28 5.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28.28z" />
                         </svg>
-                        <span>Custom Range...</span>
+                        <span>{t('customRange')}</span>
                       </button>
                     </>
                   )}
@@ -152,14 +159,14 @@ export default function DateSelect({
                       className="btn-xs bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300"
                       onClick={() => setShowCalendar(false)}
                     >
-                      Back
+                      {t('back')}
                     </button>
                     <button
                       className="btn-xs bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-800 hover:bg-gray-800 dark:hover:bg-white disabled:opacity-50"
                       disabled={!customRange?.from}
                       onClick={() => handleRangeApply(close)}
                     >
-                      Apply
+                      {t('apply')}
                     </button>
                   </div>
                 </div>

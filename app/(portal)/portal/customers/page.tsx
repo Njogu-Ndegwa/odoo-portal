@@ -15,7 +15,8 @@ import PageSizeSelect from '@/components/page-size-select'
 import { SearchableListModal } from '@/components/seachable-list-modal'
 import { SelectedItemsProvider, useSelectedItems } from '@/app/selected-items-context'
 import { useAlert } from '@/app/contexts/alertContext'
-import { columns, dropdownOptions } from './tableColumns'
+import { useTranslations } from 'next-intl'
+import { usePortalCustomerColumns, dropdownOptions } from './tableColumns'
 import { actions } from './tableActions'
 import { getSalesToken, getSalesUser } from '@/lib/odoo-auth'
 import { fetchEmployees, type Employee } from '@/lib/services/customer-service'
@@ -99,6 +100,11 @@ function PortalCustomersPage() {
 
   const { selectedItems, setSelectedItems } = useSelectedItems()
   const { alert } = useAlert()
+
+  const t = useTranslations('portal.customers')
+  const tp = useTranslations('portal')
+  const tc = useTranslations('common')
+  const columns = usePortalCustomerColumns()
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500)

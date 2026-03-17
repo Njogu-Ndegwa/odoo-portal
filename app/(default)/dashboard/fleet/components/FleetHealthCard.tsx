@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import LineChart01 from '@/components/charts/line-chart-01'
 import { getCssVariable } from '@/components/utils/utils'
 
@@ -28,6 +29,7 @@ export default function FleetHealthCard({
   trendData,
   changePercent
 }: FleetHealthCardProps) {
+  const t = useTranslations('fleetDashboard')
   // Generate deterministic time series data for the last 30 days
   const generateHealthTrendData = () => {
     const data = []
@@ -148,7 +150,7 @@ export default function FleetHealthCard({
               {reportingDevices}
             </div>
             <div className="text-green-600 dark:text-green-400 text-xs">
-              Active Devices
+              {t('activeDevices')}
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">

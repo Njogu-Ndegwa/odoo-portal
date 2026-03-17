@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@apollo/client';
+import { useTranslations } from 'next-intl';
 import { Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import FeedbackModal from '@/components/feedback-modal';
 import { useAlert } from '@/app/contexts/alertContext';
@@ -16,6 +17,9 @@ interface ActionProps {
 export const actions = ({ row, onDelete }: ActionProps) => {
     const router = useRouter();
     const { alert } = useAlert();
+    const tc = useTranslations('common');
+    const t = useTranslations('portal.customers');
+    const tm = useTranslations('modal');
     const [dangerModalOpen, setDangerModalOpen] = useState(false);
     const customerId = row.id;
     const customerName = row.name || 'this customer';
@@ -33,11 +37,11 @@ export const actions = ({ row, onDelete }: ActionProps) => {
     const handleConfirmDelete = async () => {
         try {
             await deleteCustomer({ variables: { id: String(customerId) } });
-            alert({ text: `${customerName} deleted successfully`, type: 'success' });
+            alert({ text: t('deletedSuccess', { name: customerName }), type: 'success' });
             setDangerModalOpen(false);
             onDelete?.();
         } catch (err) {
-            alert({ text: err instanceof Error ? err.message : 'Failed to delete customer', type: 'error' });
+            alert({ text: err instanceof Error ? err.message : t('deleteCustomerFailed'), type: 'error' });
             setDangerModalOpen(false);
         }
     };
@@ -53,29 +57,29 @@ export const actions = ({ row, onDelete }: ActionProps) => {
                 onClick={handleEdit}
             >
                 <Pencil className="w-4 h-4 text-gray-500" />
-                <span className="sr-only">Edit</span>
+                <span className="sr-only">{tc('edit')}</span>
             </button>
             <button
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                 onClick={handleDelete}
             >
                 <Trash2 className="w-4 h-4 text-red-500" />
-                <span className="sr-only">Delete</span>
+                <span className="sr-only">{tc('delete')}</span>
             </button>
             <button
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                 onClick={handleMore}
             >
                 <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                <span className="sr-only">View details</span>
+                <span className="sr-only">{tc('viewDetails')}</span>
             </button>
             <FeedbackModal
                 isOpen={dangerModalOpen}
                 setIsOpen={setDangerModalOpen}
                 variant="danger"
-                title={`Delete ${customerName}?`}
-                content="Are you sure you want to delete this customer? This action cannot be undone."
-                confirmButtonLabel="Yes, Delete it"
+                title={t('deleteTitle', { name: customerName })}
+                content={t('deleteCustomerConfirm')}
+                confirmButtonLabel={tm('yesDelete')}
                 onConfirm={handleConfirmDelete}
             />
         </>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import BarChart01 from '@/components/charts/bar-chart-01'
 import { getCssVariable } from '@/components/utils/utils'
 
@@ -15,6 +16,7 @@ interface ReportingQualityChartProps {
 }
 
 export default function ReportingQualityChart({ reportingQuality }: ReportingQualityChartProps) {
+  const t = useTranslations('fleetDashboard')
   // Generate mock time series data for the last 6 months
   const generateTimeSeriesData = (baseValue: number) => {
     const data = []

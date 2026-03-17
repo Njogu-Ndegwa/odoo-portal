@@ -4,6 +4,7 @@ import { ApolloProvider } from '@apollo/client'
 import portalApolloClient from '@/lib/portal-apollo-client'
 import Logo from '@/components/ui/logo'
 import ThemeToggle from '@/components/theme-toggle'
+import LanguageSwitcher from '@/components/language-switcher'
 import DropdownProfile from '@/components/dropdown-profile'
 import SASwitcher from '@/components/sa-switcher'
 import { isAuth } from '@/lib/auth'
@@ -20,6 +21,7 @@ function PortalLayout({ children }: { children: React.ReactNode }) {
                 <SASwitcher />
               </div>
               <div className="flex items-center gap-3">
+                <LanguageSwitcher align="right" />
                 <ThemeToggle />
                 <DropdownProfile align="right" />
               </div>

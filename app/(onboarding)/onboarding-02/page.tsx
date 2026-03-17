@@ -7,8 +7,10 @@ import Link from 'next/link'
 import OnboardingHeader from '../onboarding-header'
 import OnboardingImage from '../onboarding-image'
 import OnboardingProgress from '../onboarding-progress'
+import { useTranslations } from 'next-intl'
 
 export default function Onboarding02() {
+  const t = useTranslations('onboarding')
   return (
     <main className="bg-white dark:bg-gray-900">
 
@@ -29,7 +31,7 @@ export default function Onboarding02() {
             <div className="px-4 py-8">
               <div className="max-w-md mx-auto">
 
-                <h1 className="text-3xl text-gray-800 dark:text-gray-100 font-bold mb-6">Tell us about your company</h1>
+                <h1 className="text-3xl text-gray-800 dark:text-gray-100 font-bold mb-6">{t('step2Title')}</h1>
                 {/* Form */}
                 <form>
                   <div className="sm:flex space-y-3 sm:space-y-0 sm:space-x-4 mb-8">
@@ -48,7 +50,7 @@ export default function Onboarding02() {
                             fillRule="evenodd"
                           />
                         </svg>
-                        <div className="font-semibold text-gray-800 dark:text-gray-100 mb-1">Individual</div>
+                        <div className="font-semibold text-gray-800 dark:text-gray-100 mb-1">{t('individual')}</div>
                         <div className="text-sm">Lorem ipsum is place text commonly used.</div>
                       </div>
                       <div className="absolute inset-0 border-2 border-transparent peer-checked:border-violet-400 dark:peer-checked:border-violet-500 rounded-lg pointer-events-none" aria-hidden="true"></div>
@@ -65,7 +67,7 @@ export default function Onboarding02() {
                         >
                           <path d="M13 22V11a3 3 0 0 1 3-3h5a3 3 0 0 1 3 3v13H0V14a3 3 0 0 1 3-3h5a3 3 0 0 1 3 3v8h2Zm6-15h-2V3a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7H5V3a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v4ZM9 22v-8a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v8h7Zm13 0V11a1 1 0 0 0-1-1h-5a1 1 0 0 0-1 1v11h7Zm-5-8v-2h3v2h-3Zm0 3v-2h3v2h-3Zm0 3v-2h3v2h-3ZM4 20v-2h3v2H4Zm0-3v-2h3v2H4Z"/>
                         </svg>
-                        <div className="font-semibold text-gray-800 dark:text-gray-100 mb-1">Organization</div>
+                        <div className="font-semibold text-gray-800 dark:text-gray-100 mb-1">{t('organization')}</div>
                         <div className="text-sm">Lorem ipsum is place text commonly used.</div>
                       </div>
                       <div className="absolute inset-0 border-2 border-transparent peer-checked:border-violet-400 dark:peer-checked:border-violet-500 rounded-lg pointer-events-none" aria-hidden="true"></div>
@@ -87,8 +89,8 @@ export default function Onboarding02() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Link className="text-sm underline hover:no-underline" href="/onboarding-01">&lt;- Back</Link>
-                    <Link className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white ml-auto" href="/onboarding-03">Next Step -&gt;</Link>
+                    <Link className="text-sm underline hover:no-underline" href="/onboarding-01">{t('back')}</Link>
+                    <Link className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white ml-auto" href="/onboarding-03">{t('nextStep')}</Link>
                   </div>
                 </form>
 

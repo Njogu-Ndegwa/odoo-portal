@@ -9,6 +9,7 @@ import {
   MenuItem,
   Transition,
 } from "@headlessui/react";
+import { useTranslations } from "next-intl";
 import UserAvatar from "@/public/images/user-avatar-32.png";
 import { useAuth } from "@/lib/auth-context";
 
@@ -18,6 +19,7 @@ export default function DropdownProfile({
   align?: "left" | "right";
 }) {
   const { user, signOut } = useAuth();
+  const t = useTranslations("profile");
 
   return (
     <Menu as="div" className="relative inline-flex">
@@ -55,10 +57,10 @@ export default function DropdownProfile({
       >
         <div className="pt-0.5 pb-2 px-3 mb-1 border-b border-gray-200 dark:border-gray-700/60">
           <div className="font-medium text-gray-800 dark:text-gray-100">
-            {user?.name || 'User'}
+            {user?.name || t('user')}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 italic">
-            {user?.email || 'Sales'}
+            {user?.email || t('sales')}
           </div>
         </div>
         <MenuItems as="ul" className="focus:outline-hidden">
@@ -67,7 +69,7 @@ export default function DropdownProfile({
               className="font-medium text-sm flex items-center py-1 px-3 text-violet-500"
               href="/settings/account"
             >
-              Settings
+              {t("settings")}
             </Link>
           </MenuItem>
           <MenuItem as="li">
@@ -75,7 +77,7 @@ export default function DropdownProfile({
               className="font-medium text-sm flex items-center py-1 px-3 text-violet-500 cursor-pointer"
               onClick={signOut}
             >
-              Sign Out
+              {t("signOut")}
             </div>
           </MenuItem>
         </MenuItems>

@@ -11,25 +11,14 @@ import type { FilterDefinition } from '@/components/dropdown-filter'
 import SearchForm from '@/components/search-form'
 import PaginationClassic from '@/components/pagination-classic'
 import PageSizeSelect from '@/components/page-size-select'
+import { useTranslations } from 'next-intl'
 import { SelectedItemsProvider, useSelectedItems } from '@/app/selected-items-context'
 import { useAlert } from '@/app/contexts/alertContext'
 import { useSA } from '@/lib/sa-context'
 import { getServiceAccounts, deleteServiceAccount } from '@/lib/sa-api'
 import type { SADetail, GetServiceAccountsParams, SAState } from '@/lib/sa-types'
-import { columns, dropdownOptions } from './tableColumns'
+import { useServiceAccountColumns } from './tableColumns'
 import { actions } from './tableActions'
-
-const dateOptions = [
-  { id: 0, period: 'Today' },
-  { id: 1, period: 'Last 7 Days' },
-  { id: 2, period: 'Last 30 Days' },
-  { id: 3, period: 'Last 12 Months' },
-  { id: 4, period: 'All Time' },
-]
-
-const advancedFilterDefs: FilterDefinition[] = [
-  { key: 'is_root', label: 'Root accounts only' },
-]
 
 const sortOptions = [
   { value: '', label: 'Default' },
@@ -49,9 +38,26 @@ export default function ServiceAccountsPageWrapper() {
 
 function ServiceAccountsPage() {
   const router = useRouter()
-  const { isAdmin } = useSA()
+  const { isAdmin, hasSA } = useSA()
   const { alert } = useAlert()
   const { selectedItems, setSelectedItems } = useSelectedItems()
+  const t = useTranslations('portal.serviceAccounts')
+  const tc = useTranslations('common')
+  const tp = useTranslations('portal')
+  const tds = useTranslations('dateSelect')
+  const columns = useServiceAccountColumns()
+
+  const dateOptions = [
+    { id: 0, period: tds('today') },
+    { id: 1, period: tds('last7Days') },
+    { id: 2, period: tds('last30Days') },
+    { id: 3, period: tds('last12Months') },
+    { id: 4, period: tds('allTime') },
+  ]
+
+  const advancedFilterDefs: FilterDefinition[] = [
+    { key: 'is_root', label: t('rootOnly') },
+  ]
 
   const [accounts, setAccounts] = useState<SADetail[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,8 +74,8 @@ function ServiceAccountsPage() {
   const [sortValue, setSortValue] = useState('')
 
   useEffect(() => {
-    if (!isAdmin) router.push('/portal')
-  }, [isAdmin, router])
+    if (hasSA && !isAdmin) router.push('/portal')
+  }, [isAdmin, hasSA, router])
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500)
@@ -135,48 +141,48 @@ function ServiceAccountsPage() {
 
   const handleDropdownItemSelect = async () => {
     if (selectedItems.length === 0) {
-      alert({ text: 'Select at least one account first', type: 'error' })
+      alert({ text: t('selectAccountFirst'), type: 'error' })
       return
     }
     try {
       for (const id of selectedItems) {
         await deleteServiceAccount(Number(id))
       }
-      alert({ text: `${selectedItems.length} account(s) deleted successfully`, type: 'success' })
+      alert({ text: t('deletedSuccess', { count: selectedItems.length }), type: 'success' })
       loadData()
     } catch (err: unknown) {
-      alert({ text: err instanceof Error ? err.message : 'Delete failed', type: 'error' })
+      alert({ text: err instanceof Error ? err.message : t('deleteFailed'), type: 'error' })
     }
   }
 
   const typePills: { key: StateFilter; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'active', label: 'Active' },
-    { key: 'inactive', label: 'Inactive' },
+    { key: 'all', label: t('states.all') },
+    { key: 'active', label: t('states.active') },
+    { key: 'inactive', label: t('states.inactive') },
   ]
 
-  if (!isAdmin) return null
+  if (hasSA && !isAdmin) return null
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        <Link href="/portal" className="hover:text-violet-500">Portal</Link>
+        <Link href="/portal" className="hover:text-violet-500">{tp('portal')}</Link>
         <span className="mx-2">/</span>
-        <span className="text-gray-800 dark:text-gray-100 font-medium">Service Accounts</span>
+        <span className="text-gray-800 dark:text-gray-100 font-medium">{t('title')}</span>
       </nav>
 
       {/* Header section */}
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
         <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-            Service Accounts
+            {t('title')}
           </h1>
         </div>
 
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
           <SearchForm
-            placeholder="Search"
+            placeholder={tc('search')}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
           />
@@ -195,7 +201,7 @@ function ServiceAccountsPage() {
             >
               <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
             </svg>
-            <span className="max-xs:sr-only">Add</span>
+            <span className="max-xs:sr-only">{tc('add')}</span>
           </Link>
         </div>
       </div>
@@ -223,7 +229,7 @@ function ServiceAccountsPage() {
         </div>
 
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
-          <DynamicDropdown options={dropdownOptions} onDropdownItemSelect={handleDropdownItemSelect} />
+          <DynamicDropdown options={[{ id: 0, value: t('deleteSelected') }]} onDropdownItemSelect={handleDropdownItemSelect} />
           <DateSelect
             options={dateOptions}
             selected={dateFilterId}

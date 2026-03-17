@@ -200,8 +200,6 @@
 
 
 import { Design2TableColumn } from '@/components/table/table2'
-import { ArrowUp, ArrowDown } from 'lucide-react'
-import { format } from 'date-fns'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 
 export interface PerformanceTrend {
@@ -217,15 +215,6 @@ export interface PerformanceTrend {
 }
 
 export const performanceTrendsColumns: Design2TableColumn<PerformanceTrend>[] = [
-//   {
-//     header: 'Period',
-//     accessor: (item) => item.period,
-//     cellRenderer: (value) => (
-//       <div className="font-medium text-gray-900 dark:text-white">
-//         {value}
-//       </div>
-//     )
-//   },
   {
     header: 'Metric',
     accessor: (item) => item.metric,

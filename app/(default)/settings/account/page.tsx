@@ -1,16 +1,19 @@
-'use-client'
+'use client'
 
+import { useTranslations } from 'next-intl'
 import SettingsSidebar from '../settings-sidebar'
 import AccountPanel from './account-panel'
 
 export default function AccountSettings() {
+  const t = useTranslations('settings')
+
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
 
       {/* Page header */}
       <div className="mb-8">
         {/* Title */}
-        <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Account Settings</h1>
+        <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">{t('title')}</h1>
       </div>
 
       {/* Content */}

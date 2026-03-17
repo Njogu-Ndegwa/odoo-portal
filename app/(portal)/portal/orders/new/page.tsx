@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, X, Users, Package, CheckCircle2, Loader2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import StepPipeline from '@/components/step-pipeline'
 import ComboboxSearch from '@/components/combobox-search'
 import { useAlert } from '@/app/contexts/alertContext'
@@ -106,6 +107,10 @@ const DROPDOWN_PAGE_SIZE = 10
 export default function CreateOrderPage() {
   const router = useRouter()
   const { alert } = useAlert()
+  const t = useTranslations('portal.orders.new')
+  const tc = useTranslations('common')
+  const tp = useTranslations('portal')
+  const to = useTranslations('portal.orders')
 
   // ── Post-creation workflow state ──
   const [createdOrder, setCreatedOrder] = useState<OrderEntity | null>(null)
@@ -312,11 +317,11 @@ export default function CreateOrderPage() {
 
   const handleSubmit = async () => {
     if (!selectedCustomer) {
-      alert({ text: 'Please select a customer.', type: 'error' })
+      alert({ text: t('selectCustomerFirst'), type: 'error' })
       return
     }
     if (lines.length === 0) {
-      alert({ text: 'Add at least one product line.', type: 'error' })
+      alert({ text: t('addProductFirst'), type: 'error' })
       return
     }
 
@@ -333,14 +338,14 @@ export default function CreateOrderPage() {
       })
 
       if (!quotationResult.success || !quotationResult.order?.id) {
-        alert({ text: quotationResult.message ?? 'Failed to create quotation.', type: 'error' })
+        alert({ text: quotationResult.message ?? t('quotationFailed'), type: 'error' })
         setCreating(false)
         return
       }
 
       const orderId = Number(quotationResult.order.id)
 
-      alert({ text: 'Quotation created successfully.', type: 'success' })
+      alert({ text: t('quotationCreated'), type: 'success' })
 
       // Immediately transition to workflow view using creation response data
       setCreatedOrder(quotationResult.order)
@@ -376,7 +381,7 @@ export default function CreateOrderPage() {
         } catch {}
       })
     } catch (err: any) {
-      alert({ text: err?.message ?? 'Failed to create order.', type: 'error' })
+      alert({ text: err?.message ?? t('orderFailed'), type: 'error' })
       setCreating(false)
     }
   }
@@ -404,12 +409,12 @@ export default function CreateOrderPage() {
         alert({ text: successMsg, type: 'success' })
         await refreshOrder(minStep)
       } catch (err: any) {
-        alert({ text: err?.message ?? 'Operation failed', type: 'error' })
+        alert({ text: err?.message ?? t('operationFailed'), type: 'error' })
       } finally {
         setActionLoading(false)
       }
     },
-    [alert, refreshOrder],
+    [alert, refreshOrder, t],
   )
 
   const handleConfirm = useCallback(() => {
@@ -419,20 +424,20 @@ export default function CreateOrderPage() {
         await restConfirmOrder(orderId)
         await restRequestApproval(orderId)
       },
-      'Order confirmed & submitted for approval.',
+      t('confirmedApproval'),
       2,
     )
   }, [handleRestAction, orderId])
 
   const handleRequestApproval = useCallback(() => {
     if (!orderId) return
-    return handleRestAction(() => restRequestApproval(orderId), 'Approval request submitted.', 3)
+    return handleRestAction(() => restRequestApproval(orderId), t('approvalSubmitted'), 3)
   }, [handleRestAction, orderId])
 
   const handleApprove = useCallback(
     (notes: string) => {
       if (!orderId) return
-      return handleRestAction(() => restApproveOrder(orderId, notes), 'Order approved.')
+      return handleRestAction(() => restApproveOrder(orderId, notes), t('orderApproved'))
     },
     [handleRestAction, orderId],
   )
@@ -440,7 +445,7 @@ export default function CreateOrderPage() {
   const handleReject = useCallback(
     (notes: string) => {
       if (!orderId) return
-      return handleRestAction(() => restRejectOrder(orderId, notes), 'Order rejected.')
+      return handleRestAction(() => restRejectOrder(orderId, notes), t('orderRejected'))
     },
     [handleRestAction, orderId],
   )
@@ -451,7 +456,7 @@ export default function CreateOrderPage() {
       setActionLoading(true)
       try {
         const result = await restRegisterPayment(orderId, amount, memo)
-        alert({ text: 'Payment registered.', type: 'success' })
+        alert({ text: t('paymentRegistered'), type: 'success' })
 
         let updated: OrderEntity
         try {
@@ -487,12 +492,12 @@ export default function CreateOrderPage() {
         setBackendStep(computed)
         setActiveStep(computed)
       } catch (err: any) {
-        alert({ text: err?.message ?? 'Operation failed', type: 'error' })
+        alert({ text: err?.message ?? t('operationFailed'), type: 'error' })
       } finally {
         setActionLoading(false)
       }
     },
-    [orderId, alert, createdOrder],
+    [orderId, alert, createdOrder, t],
   )
 
   const handleDownloadPdf = useCallback(async () => {
@@ -506,15 +511,15 @@ export default function CreateOrderPage() {
         link.click()
       }
     } catch (err: any) {
-      alert({ text: err?.message ?? 'Failed to download PDF', type: 'error' })
+      alert({ text: err?.message ?? t('downloadFailed'), type: 'error' })
     }
   }, [orderId, alert])
 
   const handleSendProforma = useCallback(async () => {
     if (!orderId) return
     const res = await sendProformaPdf(orderId)
-    if (!res.success) throw new Error(res.message ?? 'Failed to send proforma')
-    alert({ text: 'Proforma invoice sent to customer.', type: 'success' })
+    if (!res.success) throw new Error(res.message ?? t('proformaSendFailed'))
+    alert({ text: t('proformaSent'), type: 'success' })
   }, [orderId, alert])
 
   const handleStepAction = useCallback(
@@ -561,9 +566,9 @@ export default function CreateOrderPage() {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
         <nav className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          <Link href="/portal" className="hover:text-violet-500">Portal</Link>
+          <Link href="/portal" className="hover:text-violet-500">{tp('portal')}</Link>
           <span className="mx-2">/</span>
-          <Link href="/portal/orders" className="hover:text-violet-500">Orders</Link>
+          <Link href="/portal/orders" className="hover:text-violet-500">{to('title')}</Link>
           <span className="mx-2">/</span>
           <span className="text-gray-800 dark:text-gray-100 font-medium">{createdOrder.name}</span>
         </nav>
@@ -620,7 +625,7 @@ export default function CreateOrderPage() {
             ) : activeStep < 4 && sa.nextLabel ? (
               <div className="flex items-center gap-3">
                 {needsFullPayment && (
-                  <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">Full payment required</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">{t('fullPaymentRequired')}</span>
                 )}
                 <button
                   className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -628,7 +633,7 @@ export default function CreateOrderPage() {
                   disabled={nextDisabled}
                 >
                   {actionLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Processing&hellip;</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> {t('processing')}</>
                   ) : (
                     <>{sa.nextLabel} &rarr;</>
                   )}
@@ -638,7 +643,7 @@ export default function CreateOrderPage() {
               <button
                 className="btn bg-green-600 text-white hover:bg-green-700"
                 onClick={() => {
-                  alert({ text: 'Order complete!', type: 'success' })
+                  alert({ text: t('orderComplete'), type: 'success' })
                   router.push('/portal/orders')
                 }}
               >
@@ -658,13 +663,13 @@ export default function CreateOrderPage() {
       <div className="flex-1 min-w-0">
         <span className="font-medium text-gray-800 dark:text-gray-100">{c.name}</span>
         <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-          <span className="truncate">{c.email || 'No email'}</span>
+          <span className="truncate">{c.email || t('noEmail')}</span>
           <span className={`shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
             c.isCompany
               ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
               : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
           }`}>
-            {c.isCompany ? 'Company' : 'Individual'}
+            {c.isCompany ? tc('company') : tc('individual')}
           </span>
         </div>
       </div>
@@ -675,23 +680,23 @@ export default function CreateOrderPage() {
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        <Link href="/portal" className="hover:text-violet-500">Portal</Link>
+        <Link href="/portal" className="hover:text-violet-500">{tp('portal')}</Link>
         <span className="mx-2">/</span>
-        <Link href="/portal/orders" className="hover:text-violet-500">Orders</Link>
+        <Link href="/portal/orders" className="hover:text-violet-500">{to('title')}</Link>
         <span className="mx-2">/</span>
-        <span className="text-gray-800 dark:text-gray-100 font-medium">New</span>
+        <span className="text-gray-800 dark:text-gray-100 font-medium">{tc('new')}</span>
       </nav>
 
       {/* Header */}
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
         <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-            Create Quotation
+            {t('title')}
           </h1>
         </div>
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
           <span className="btn border-gray-200 dark:border-gray-700/60 text-gray-500 dark:text-gray-400 cursor-default">
-            Draft
+            {t('draft')}
           </span>
         </div>
       </div>
@@ -711,18 +716,18 @@ export default function CreateOrderPage() {
               <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/40">
                 <Users className="w-4 h-4 text-violet-600 dark:text-violet-300" />
               </div>
-              Customer
+              {t('customer')}
             </h2>
             <ComboboxSearch<CustomerEntity>
-              triggerLabel={selectedCustomer ? 'Change Customer' : 'Select Customer'}
+              triggerLabel={selectedCustomer ? t('changeCustomer') : t('selectCustomer')}
               triggerIcon={<Users className="w-4 h-4" />}
               triggerClassName="btn text-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300 min-w-[10rem] justify-center"
-              searchPlaceholder="Search by name or email…"
+              searchPlaceholder={t('searchCustomerPlaceholder')}
               value={customerSearch}
               onChange={setCustomerSearch}
               items={accumulatedCustomers}
               isLoading={customerLoadingInitial}
-              emptyMessage="No customers found"
+              emptyMessage={t('noCustomers')}
               onSelect={handleSelectCustomer}
               onOpenChange={handleCustomerOpenChange}
               align="right"
@@ -749,7 +754,7 @@ export default function CreateOrderPage() {
                   type="button"
                   onClick={handleClearCustomer}
                   className="p-1.5 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:text-red-400/70 dark:hover:text-red-400 dark:hover:bg-red-900/20 transition-colors shrink-0"
-                  title="Clear customer"
+                  title={t('clearCustomer')}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -766,7 +771,7 @@ export default function CreateOrderPage() {
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-100 dark:bg-violet-900/40">
               <Package className="w-4 h-4 text-violet-600 dark:text-violet-300" />
             </div>
-            Product-Unit Lines
+            {t('productUnitLines')}
             {lines.length > 0 && (
               <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">
                 ({lines.length} PU{lines.length > 1 ? 's' : ''} across{' '}
@@ -775,15 +780,15 @@ export default function CreateOrderPage() {
             )}
           </h2>
           <ComboboxSearch<ProductUnitEntity>
-            triggerLabel="Add PU Line"
+            triggerLabel={t('addPuLine')}
             triggerIcon={<Plus className="w-4 h-4" />}
             triggerClassName="btn text-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-600 dark:text-gray-300 min-w-[10rem] justify-center"
-            searchPlaceholder="Search products…"
+            searchPlaceholder={t('searchProducts')}
             value={productSearch}
             onChange={setProductSearch}
             items={accumulatedProducts}
             isLoading={productLoadingInitial}
-            emptyMessage="No products found"
+            emptyMessage={t('noProducts')}
             onSelect={handleAddProduct}
             onOpenChange={handleProductOpenChange}
             align="right"
@@ -796,7 +801,7 @@ export default function CreateOrderPage() {
                 <div className="flex-1 min-w-0">
                   <span className="font-medium text-gray-800 dark:text-gray-100">{p.name}</span>
                   <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    <span>{p.sku || 'No SKU'}</span>
+                    <span>{p.sku || t('noSku')}</span>
                     {p.puCategory && (
                       <span
                         className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
@@ -827,22 +832,22 @@ export default function CreateOrderPage() {
                     <div className="font-semibold text-left">#</div>
                   </th>
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                    <div className="font-semibold text-left">Product-Unit</div>
+                    <div className="font-semibold text-left">{t('productUnit')}</div>
                   </th>
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                    <div className="font-semibold text-left">Category</div>
+                    <div className="font-semibold text-left">{t('category')}</div>
                   </th>
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                    <div className="font-semibold text-left">Metric</div>
+                    <div className="font-semibold text-left">{t('metric')}</div>
                   </th>
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                    <div className="font-semibold text-right">Unit Price</div>
+                    <div className="font-semibold text-right">{t('unitPrice')}</div>
                   </th>
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                    <div className="font-semibold text-right">Qty</div>
+                    <div className="font-semibold text-right">{t('qty')}</div>
                   </th>
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap">
-                    <div className="font-semibold text-right">Subtotal</div>
+                    <div className="font-semibold text-right">{t('subtotal')}</div>
                   </th>
                   <th className="px-2 first:pl-5 last:pr-5 py-3 whitespace-nowrap w-px">
                     <span className="sr-only">Actions</span>
@@ -911,9 +916,7 @@ export default function CreateOrderPage() {
         ) : (
           <div className="text-center py-10 px-5">
             <Package className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No product lines yet. Click <strong>Add PU Line</strong> above to build the quotation.
-            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400" dangerouslySetInnerHTML={{ __html: t('noLinesYet') }} />
           </div>
         )}
 
@@ -927,7 +930,7 @@ export default function CreateOrderPage() {
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                       PHY
                     </span>
-                    Physical
+                    {t('physical')}
                   </span>
                   <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
                     {formatCurrency(summary.physicalSubtotal)}
@@ -940,7 +943,7 @@ export default function CreateOrderPage() {
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
                       CTR
                     </span>
-                    Contract
+                    {t('contract')}
                   </span>
                   <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
                     {formatCurrency(summary.contractSubtotal)}
@@ -948,13 +951,13 @@ export default function CreateOrderPage() {
                 </div>
               )}
               <div className="flex justify-between text-sm border-t border-gray-100 dark:border-gray-700/60 pt-1.5 mt-1">
-                <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
+                <span className="text-gray-500 dark:text-gray-400">{t('subtotal')}</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">
                   {formatCurrency(summary.subtotal)}
                 </span>
               </div>
               <div className="flex justify-between text-base border-t-2 border-gray-800 dark:border-gray-200 pt-2 mt-1.5">
-                <span className="font-bold text-gray-800 dark:text-gray-100">Total</span>
+                <span className="font-bold text-gray-800 dark:text-gray-100">{t('total')}</span>
                 <span className="font-extrabold text-green-600 dark:text-green-400 tabular-nums">
                   {formatCurrency(summary.total)}
                 </span>
@@ -969,7 +972,7 @@ export default function CreateOrderPage() {
             href="/portal/orders"
             className="btn border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300"
           >
-            Cancel
+            {tc('cancel')}
           </Link>
           <button
             type="button"
@@ -977,7 +980,7 @@ export default function CreateOrderPage() {
             className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white disabled:opacity-50"
             onClick={handleSubmit}
           >
-            {creating ? 'Creating…' : 'Create Quotation'}
+            {creating ? tc('creating') : t('createQuotation')}
           </button>
         </div>
       </div>

@@ -5,11 +5,13 @@
 // };
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import AuthHeader from "../auth-header";
 import AuthImage from "../auth-image";
 import { useAuth } from "@/lib/auth-context";
 
 export default function SignIn() {
+  const t = useTranslations("auth");
   const { signIn, loading, error } = useAuth();
 
   const [credentials, setCredentials] = React.useState({
@@ -37,7 +39,7 @@ export default function SignIn() {
 
             <div className="max-w-sm mx-auto w-full px-4 py-8">
               <h1 className="text-3xl text-gray-800 dark:text-gray-100 font-bold mb-6">
-                Welcome back!
+                {t("welcomeBack")}
               </h1>
               {/* Form */}
               <form onSubmit={handleSubmit}>
@@ -47,7 +49,7 @@ export default function SignIn() {
                       className="block text-sm font-medium mb-1"
                       htmlFor="email"
                     >
-                      Email Address
+                      {t("emailAddress")}
                     </label>
                     <input
                       id="email"
@@ -64,7 +66,7 @@ export default function SignIn() {
                       className="block text-sm font-medium mb-1"
                       htmlFor="password"
                     >
-                      Password
+                      {t("password")}
                     </label>
                     <input
                       id="password"
@@ -84,7 +86,7 @@ export default function SignIn() {
                       className="text-sm underline hover:no-underline"
                       href="/reset-password"
                     >
-                      Forgot Password?
+                      {t("forgotPassword")}
                     </Link>
                   </div>
                   <button
@@ -92,7 +94,7 @@ export default function SignIn() {
                     type="submit"
                     disabled={loading}
                   >
-                    {loading ? "Signing In..." : "Sign In"}
+                    {loading ? t("signingIn") : t("signIn")}
                   </button>
                 </div>
               </form>
@@ -105,12 +107,12 @@ export default function SignIn() {
               {/* Footer */}
               <div className="pt-5 mt-6 border-t border-gray-100 dark:border-gray-700/60">
                 <div className="text-sm">
-                  Don't you have an account?{" "}
+                  {t("noAccount")}{" "}
                   <Link
                     className="font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400"
                     href="/signup"
                   >
-                    Sign Up
+                    {t("signUp")}
                   </Link>
                 </div>
                 {/* Warning */}
@@ -123,8 +125,7 @@ export default function SignIn() {
                       <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
                     </svg>
                     <span className="text-sm">
-                      To support you during the pandemic super pro features are
-                      free until March 31st.
+                      {t("promoMessage")}
                     </span>
                   </div>
                 </div>

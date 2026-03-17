@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Search, Battery, Thermometer, MapPin, Wifi, AlertCircle, Clock, Zap } from 'lucide-react'
 
 interface DeviceData {
@@ -27,6 +28,7 @@ interface DeviceData {
 }
 
 export default function DeviceMonitoringTab() {
+  const t = useTranslations('fleetDashboard')
   const [devices, setDevices] = useState<DeviceData[]>([])
   const [selectedDevice, setSelectedDevice] = useState<DeviceData | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -194,7 +196,7 @@ export default function DeviceMonitoringTab() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search devices by name or ID..."
+              placeholder={t('searchDevices')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
@@ -295,6 +297,7 @@ export default function DeviceMonitoringTab() {
 
 // Device Details Component
 function DeviceDetails({ device }: { device: DeviceData }) {
+  const t = useTranslations('fleetDashboard')
   const getBatteryColor = (level: number) => {
     if (level > 50) return 'text-green-600 dark:text-green-400'
     if (level > 20) return 'text-yellow-600 dark:text-yellow-400'
@@ -375,26 +378,26 @@ function DeviceDetails({ device }: { device: DeviceData }) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard
-            title="Battery Level"
+            title={t('batteryLevel')}
             value={`${device.battery.level}%`}
             icon={<Battery className="w-5 h-5" />}
             color={getBatteryColor(device.battery.level)}
             progress={device.battery.level}
           />
           <MetricCard
-            title="Voltage"
+            title={t('voltage')}
             value={`${device.battery.voltage}V`}
             icon={<Zap className="w-5 h-5" />}
             color="text-blue-600 dark:text-blue-400"
           />
           <MetricCard
-            title="Current"
+            title={t('current')}
             value={`${device.battery.current}A`}
             icon={<Zap className="w-5 h-5" />}
             color="text-purple-600 dark:text-purple-400"
           />
           <MetricCard
-            title="Cycles"
+            title={t('cycles')}
             value={device.battery.cycles.toString()}
             icon={<AlertCircle className="w-5 h-5" />}
             color="text-orange-600 dark:text-orange-400"

@@ -162,6 +162,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Activity, AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 interface OverallFleetSummary {
@@ -190,6 +191,7 @@ export default function FleetOverviewTab() {
   const [overallSummary, setOverallSummary] = useState<OverallFleetSummary | null>(null)
   const [fleetData, setFleetData] = useState<FleetData[]>([])
   const [loading, setLoading] = useState(true)
+  const t = useTranslations('fleetDashboard')
 
   useEffect(() => {
     fetchData()
@@ -283,30 +285,30 @@ export default function FleetOverviewTab() {
       {overallSummary && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard
-            title="Total Devices"
+            title={t('totalDevices')}
             value={overallSummary.total_expected_devices.toLocaleString()}
-            subtitle="Expected fleet size"
+            subtitle={t('expectedFleetSize')}
             icon={<Activity className="w-6 h-6" />}
             color="blue"
           />
           <MetricCard
-            title="Active Devices"
+            title={t('activeDevices')}
             value={overallSummary.total_currently_reporting.toLocaleString()}
             subtitle={`${((overallSummary.total_currently_reporting / overallSummary.total_expected_devices) * 100).toFixed(1)}% reporting`}
             icon={<CheckCircle className="w-6 h-6" />}
             color="green"
           />
           <MetricCard
-            title="Missing Assets"
+            title={t('missingAssets')}
             value={overallSummary.total_missing_assets.toLocaleString()}
-            subtitle="Require attention"
+            subtitle={t('requireAttention')}
             icon={<AlertTriangle className="w-6 h-6" />}
             color="red"
           />
           <MetricCard
-            title="Fleet Health"
+            title={t('fleetHealth')}
             value={`${overallSummary.overall_fleet_health_percent}%`}
-            subtitle="Overall performance"
+            subtitle={t('overallPerformance')}
             icon={<TrendingUp className="w-6 h-6" />}
             color={overallSummary.overall_fleet_health_percent >= 90 ? 'green' : 
                    overallSummary.overall_fleet_health_percent >= 75 ? 'yellow' : 'red'}

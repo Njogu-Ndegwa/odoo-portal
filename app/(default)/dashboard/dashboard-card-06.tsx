@@ -1,11 +1,13 @@
 'use client'
 
 import DoughnutChart from '@/components/charts/doughnut-chart'
+import { useTranslations } from 'next-intl'
 
 // Import utilities
 import { getCssVariable } from '@/components/utils/utils'
 
 export default function DashboardCard06() {
+  const t = useTranslations('dashboard')
 
   const chartData = {
     labels: ['Oves Distributor Fleet', 'Open Token Simulator', 'M400Test fleet', 'Other'],
@@ -35,7 +37,7 @@ export default function DashboardCard06() {
   return(
     <div className="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
       <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
-        <h2 className="font-semibold text-gray-800 dark:text-gray-100">Top Fleets</h2>
+        <h2 className="font-semibold text-gray-800 dark:text-gray-100">{t('topFleets')}</h2>
       </header>
       {/* Chart built with Chart.js 3 */}
       {/* Change the height attribute to adjust the chart height */}

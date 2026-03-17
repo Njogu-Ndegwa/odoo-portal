@@ -3,8 +3,11 @@ import UserImage from '@/public/images/user-64-14.jpg'
 import FintechIcon01 from '@/public/images/company-icon-06.svg'
 import FintechIcon02 from '@/public/images/company-icon-02.svg'
 import FintechIcon03 from '@/public/images/company-icon-03.svg'
+import { useTranslations } from 'next-intl'
 
 export default function FintechIntro() {
+  const t = useTranslations('fintech')
+
   return(
     <div className="flex flex-col col-span-full bg-white dark:bg-gray-800 shadow-sm rounded-xl">
       <div className="px-5 py-6">
@@ -18,7 +21,10 @@ export default function FintechIntro() {
             {/* User info */}
             <div>
               <div className="mb-2">
-                Hey <strong className="font-medium text-gray-800 dark:text-gray-100">Mary</strong> 👋, this is your current balance:
+                {t.rich('greeting', {
+                  name: 'Mary',
+                  bold: (chunks) => <strong className="font-medium text-gray-800 dark:text-gray-100">{chunks}</strong>
+                })}
               </div>
               <div className="text-3xl font-bold text-green-500">$47,347.09</div>
             </div>
@@ -42,7 +48,7 @@ export default function FintechIntro() {
             </li>
             <li>
               <button className="flex justify-center items-center w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-violet-500 shadow-sm transition">
-                <span className="sr-only">Add new account</span>
+                <span className="sr-only">{t('addNewAccount')}</span>
                 <svg className="fill-current" width="16" height="16" viewBox="0 0 16 16">
                   <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
                 </svg>

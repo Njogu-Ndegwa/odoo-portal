@@ -17,7 +17,7 @@ import { SelectedItemsProvider } from '@/app/selected-items-context';
 import Alert from '@/components/alert';
 import { useAlert } from '@/app/contexts/alertContext';
 import FeedbackModal from '@/components/feedback-modal';
-import { columns, dropdownOptions } from "./tableColumns";
+import { useAssetAccountColumns } from "./tableColumns";
 import { actions } from './tableActions';
 import { SearchableListModal } from '@/components/seachable-list-modal';
 import { useLazygetAllAssetAccountsForClientQuery } from './queries';
@@ -26,6 +26,7 @@ import { usePagination } from '@/components/utils/pagination';
 import { GetAllAssetAccountsForClient_getAllAssetAccountsForClient_page_edges } from './types/GetAllAssetAccountsForClient';
 import  SearchForm  from '@/components/search-form';
 import PaginationClassic from '@/components/pagination-classic';
+import { useTranslations } from 'next-intl';
 export default function FleetTableWrapper() {
   return (
     <SelectedItemsProvider>
@@ -35,6 +36,10 @@ export default function FleetTableWrapper() {
 }
 
 function FleetTable() {
+  const t = useTranslations('assetAccounts');
+  const tc = useTranslations('common');
+  const tm = useTranslations('modal');
+  const { columns, dropdownOptions } = useAssetAccountColumns();
   const [customers, setCustomers] = useState<GetAllAssetAccountsForClient_getAllAssetAccountsForClient_page_edges[]>(
     [] as GetAllAssetAccountsForClient_getAllAssetAccountsForClient_page_edges[])
   const [loading, setLoading] = useState(true)
@@ -193,35 +198,35 @@ console.log(columns, "Columns")
         isOpen={dangerModalOpen}
         setIsOpen={setDangerModalOpen}
         variant="danger"
-        title={`Delete ${1} customer?`}
-        content="Semper eget duis at tellus at urna condimentum mattis pellentesque lacus suspendisse faucibus interdum."
-        confirmButtonLabel="Yes, Delete it"
+        title={tm('deleteTitle', { count: 1, entity: 'account' })}
+        content={tm('deleteConfirmation', { entity: 'account' })}
+        confirmButtonLabel={tm('yesDelete')}
       />
       <SearchableListModal
         isOpen={isOpen}
         setIsOpen={setIsOpen}
-        title="Select an Agent"
+        title={tc('selectAnAgent')}
         items={filteredAgents}
-        searchPlaceholder="Search for an agent..."
+        searchPlaceholder={tc('searchForAgent')}
         searchValue={searchQuery}
         onSearch={setSearchQuery}
         renderItem={(agent) => agent.email}
         onSelect={handleAgentSelect}
         selectedItemId={selectedAgentId}
-        actionLabel={selectedOption === 1 ? 'Assign Item' : 'Re-assign Item'}
+        actionLabel={selectedOption === 1 ? tc('assignItem') : tc('reassignItem')}
         onAction={() => handleActionClick(selectedOption === 1 ? 'assign' : 'reAssign')}
       />
       {/* Header section */}
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
         <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-            PayGo Accounts
+            {t('title')}
           </h1>
         </div>
 
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
         <SearchForm
-          placeholder="Search" 
+          placeholder={tc('search')} 
           searchTerm={searchTerm}
           setSearchTerm={handleSearch}
         />
@@ -240,7 +245,7 @@ console.log(columns, "Columns")
             >
               <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
             </svg>
-            <span className="max-xs:sr-only">Add</span>
+            <span className="max-xs:sr-only">{tc('add')}</span>
           </Link>
         </div>
       </div>
@@ -250,7 +255,7 @@ console.log(columns, "Columns")
         <div className="mb-4 sm:mb-0">
           <ul className="flex flex-wrap -m-1">
             <li className="m-1">
-              <button className="inline-flex items-center justify-center text-sm font-medium leading-5 rounded-full px-3 py-1 border border-transparent shadow-sm bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-800 transition">All <span className="ml-1 text-gray-400 dark:text-gray-500">{totalCount}</span></button>
+              <button className="inline-flex items-center justify-center text-sm font-medium leading-5 rounded-full px-3 py-1 border border-transparent shadow-sm bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-800 transition">{tc('all')} <span className="ml-1 text-gray-400 dark:text-gray-500">{totalCount}</span></button>
             </li>
           </ul>
         </div>

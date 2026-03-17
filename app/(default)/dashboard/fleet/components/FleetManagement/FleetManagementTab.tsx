@@ -773,6 +773,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Plus, Search, Users, CheckCircle, Settings } from 'lucide-react'
 import Table from '@/components/table/table'
 import { SelectedItemsProvider } from '@/app/selected-items-context'
@@ -786,7 +787,7 @@ import { SearchableListModal } from '@/components/seachable-list-modal'
 import FeedbackModal from '@/components/feedback-modal'
 import { useAlert } from '@/app/contexts/alertContext'
 import { usePagination } from '@/components/utils/pagination'
-import { columns, dropdownOptions } from './tableColumns'
+import { useFleetColumns } from './tableColumns'
 import { actions } from './tableActions'
 
 interface Fleet {
@@ -821,6 +822,8 @@ export default function FleetManagementTabWrapper() {
 }
 
 function FleetManagementTab() {
+  const t = useTranslations('fleetDashboard')
+  const tc = useTranslations('common')
   const [fleets, setFleets] = useState<Fleet[]>([])
   const [devices, setDevices] = useState<Device[]>([])
   const [selectedFleet, setSelectedFleet] = useState<Fleet | null>(null)
@@ -829,6 +832,7 @@ function FleetManagementTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { setSelectedItems, selectedItems } = useSelectedItems()
+  const { columns, dropdownOptions } = useFleetColumns()
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null)
   const [dangerModalOpen, setDangerModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -1039,16 +1043,16 @@ function FleetManagementTab() {
         setIsOpen={setDangerModalOpen}
         variant="danger"
         title={`Delete ${selectedItems.length} fleet(s)?`}
-        content="Are you sure you want to delete the selected fleet(s)? This action cannot be undone."
+        content={t('deleteFleetConfirm')}
         confirmButtonLabel="Yes, Delete"
       />
 
       <SearchableListModal
         isOpen={isOpen}
         setIsOpen={setIsOpen}
-        title="Select an Agent"
+        title={tc('selectAnAgent')}
         items={filteredAgents}
-        searchPlaceholder="Search for an agent..."
+        searchPlaceholder={tc('searchForAgent')}
         searchValue={searchQuery}
         onSearch={setSearchQuery}
         renderItem={(agent) => agent.email}
@@ -1081,13 +1085,13 @@ function FleetManagementTab() {
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
         <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-            Fleet Management
+            {t('fleetManagement')}
           </h1>
         </div>
 
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
           <SearchForm
-            placeholder="Search fleets..." 
+            placeholder={t('searchFleets')} 
             searchTerm={searchTerm}
             setSearchTerm={handleSearch}
           />
@@ -1119,12 +1123,12 @@ function FleetManagementTab() {
               <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Total Fleets</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('fleetManagement')}</h3>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{fleets.length}</p>
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Active fleet configurations
+            {t('manageConfigurations')}
           </p>
         </div>
 
@@ -1134,7 +1138,7 @@ function FleetManagementTab() {
               <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Total Devices</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('totalDevices')}</h3>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {fleets.reduce((sum, fleet) => sum + fleet.deviceCount, 0)}
               </p>
@@ -1151,14 +1155,14 @@ function FleetManagementTab() {
               <Settings className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Active Devices</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{t('activeDevices')}</h3>
               <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {fleets.reduce((sum, fleet) => sum + fleet.activeDevices, 0)}
               </p>
             </div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Currently reporting
+            {t('devices')}
           </p>
         </div>
       </div>
@@ -1219,12 +1223,13 @@ function FleetManagementTab() {
   )
 }
 
-// Fleet Details Modal Component
 function FleetDetailsModal({ fleet, devices, onClose }: { 
   fleet: Fleet, 
   devices: Device[], 
   onClose: () => void 
 }) {
+  const t = useTranslations('fleetDashboard')
+  const tc = useTranslations('common')
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -1253,21 +1258,21 @@ function FleetDetailsModal({ fleet, devices, onClose }: {
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <span className="font-medium text-gray-900 dark:text-white">Manager</span>
+                <span className="font-medium text-gray-900 dark:text-white">{t('manager')}</span>
               </div>
               <p className="text-gray-600 dark:text-gray-400">{fleet.manager}</p>
             </div>
             
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium text-gray-900 dark:text-white">Location</span>
+                <span className="font-medium text-gray-900 dark:text-white">{tc('location')}</span>
               </div>
               <p className="text-gray-600 dark:text-gray-400">{fleet.location}</p>
             </div>
             
             <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="font-medium text-gray-900 dark:text-white">Created</span>
+                <span className="font-medium text-gray-900 dark:text-white">{tc('createdAt')}</span>
               </div>
               <p className="text-gray-600 dark:text-gray-400">
                 {new Date(fleet.createdAt).toLocaleDateString()}
@@ -1281,25 +1286,25 @@ function FleetDetailsModal({ fleet, devices, onClose }: {
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {fleet.deviceCount}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total Devices</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('totalDevices')}</div>
             </div>
             <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {fleet.activeDevices}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Active</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{tc('active')}</div>
             </div>
             <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
               <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {fleet.deviceCount - fleet.activeDevices}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Offline</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{tc('inactive')}</div>
             </div>
             <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
               <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {fleet.healthScore}%
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Health Score</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">{t('healthScore')}</div>
             </div>
           </div>
 
@@ -1309,10 +1314,10 @@ function FleetDetailsModal({ fleet, devices, onClose }: {
               onClick={onClose}
               className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
-              Close
+              {tc('close')}
             </button>
             <button className="px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors">
-              Edit Fleet
+              {t('editFleet')}
             </button>
           </div>
         </div>
@@ -1321,8 +1326,9 @@ function FleetDetailsModal({ fleet, devices, onClose }: {
   )
 }
 
-// Create Fleet Modal Component
 function CreateFleetModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('fleetDashboard')
+  const tc = useTranslations('common')
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -1342,7 +1348,7 @@ function CreateFleetModal({ onClose }: { onClose: () => void }) {
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Create New Fleet
+              {t('createFleet')}
             </h2>
             <button 
               onClick={onClose}
@@ -1356,55 +1362,55 @@ function CreateFleetModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-              Fleet Name
+              {t('fleetName')}
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="Enter fleet name"
+              placeholder={t('enterFleetName')}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-              Description
+              {tc('description')}
             </label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="Fleet description"
+              placeholder={t('fleetDescription')}
               rows={3}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-              Fleet Manager
+              {t('manager')}
             </label>
             <input
               type="text"
               value={formData.manager}
               onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="Manager name"
+              placeholder={t('managerName')}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
-              Location
+              {tc('location')}
             </label>
             <input
               type="text"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
-              placeholder="Fleet location"
+              placeholder={t('fleetLocation')}
               required
             />
           </div>
@@ -1415,13 +1421,13 @@ function CreateFleetModal({ onClose }: { onClose: () => void }) {
               onClick={onClose}
               className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
-              Cancel
+              {tc('cancel')}
             </button>
             <button 
               type="submit"
               className="px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors"
             >
-              Create Fleet
+              {t('createFleet')}
             </button>
           </div>
         </form>
@@ -1430,8 +1436,9 @@ function CreateFleetModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-// Assign Devices Modal Component
 function AssignDevicesModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslations('fleetDashboard')
+  const tc = useTranslations('common')
   const [selectedDevices, setSelectedDevices] = useState<string[]>([])
   const [selectedFleet, setSelectedFleet] = useState('')
 
@@ -1466,7 +1473,7 @@ function AssignDevicesModal({ onClose }: { onClose: () => void }) {
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Assign Devices to Fleet
+              {t('assignDevices')}
             </h2>
             <button 
               onClick={onClose}

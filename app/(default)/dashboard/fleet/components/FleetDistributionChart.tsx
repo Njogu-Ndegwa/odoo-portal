@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import DoughnutChart from '@/components/charts/doughnut-chart'
 import { getCssVariable } from '@/components/utils/utils'
 
@@ -15,6 +16,7 @@ interface FleetDistributionChartProps {
 }
 
 export default function FleetDistributionChart({ fleetData }: FleetDistributionChartProps) {
+  const t = useTranslations('fleetDashboard')
   const chartData = {
     labels: fleetData.map(fleet => fleet.name),
     datasets: [
@@ -47,7 +49,7 @@ export default function FleetDistributionChart({ fleetData }: FleetDistributionC
   return (
     <div className="flex flex-col col-span-full sm:col-span-6 xl:col-span-1 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
       <header className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
-        <h2 className="font-semibold text-gray-800 dark:text-gray-100">Fleet Distribution</h2>
+        <h2 className="font-semibold text-gray-800 dark:text-gray-100">{t('devices')}</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
           Device count by fleet ({totalDevices.toLocaleString()} total)
         </p>

@@ -10,6 +10,7 @@ import Logo from "./logo";
 import SmallLogo from "./smallLogo";
 // import Logo from "./favicon-Photoroom.png"
 import { useMenuVisibility } from '../../lib/auth'
+import { useTranslations } from 'next-intl'
 
 export default function Sidebar({
   variant = "default",
@@ -24,6 +25,7 @@ export default function Sidebar({
   const expandOnly =
     !sidebarExpanded && breakpoint && breakpoint >= 1024 && breakpoint < 1536;
   const { canViewMenu } = useMenuVisibility();
+  const t = useTranslations('sidebar');
   // close on click outside
   useEffect(() => {
     const clickHandler = ({ target }: { target: EventTarget | null }): void => {
@@ -73,7 +75,7 @@ export default function Sidebar({
             aria-controls="sidebar"
             aria-expanded={sidebarOpen}
           >
-            <span className="sr-only">Close sidebar</span>
+            <span className="sr-only">{t('closeSidebar')}</span>
             <svg
               className="w-6 h-6 fill-current"
               viewBox="0 0 24 24"
@@ -105,7 +107,7 @@ export default function Sidebar({
                 •••
               </span>
               <span className="lg:hidden lg:sidebar-expanded:block 2xl:block">
-                Pages
+                {t('pages')}
               </span>
             </h3>
             <ul className="mt-3">
@@ -143,7 +145,7 @@ export default function Sidebar({
                                 <path d="M6.068 7.482A2.003 2.003 0 0 0 8 10a2 2 0 1 0-.518-3.932L3.707 2.293a1 1 0 0 0-1.414 1.414l3.775 3.775Z" />
                               </svg>
                               <span className="text-sm font-medium ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Dashboard
+                                {t('dashboard')}
                               </span>
                             </div>
                             {/* Icon */}
@@ -163,28 +165,28 @@ export default function Sidebar({
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/dashboard">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Main
+                                  {t('main')}
                                 </span>
                               </SidebarLink>
                             </li>
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/dashboard/analytics">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Analytics
+                                  {t('analytics')}
                                 </span>
                               </SidebarLink>
                             </li>
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/dashboard/fintech">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Fintech
+                                  {t('fintech')}
                                 </span>
                               </SidebarLink>
                             </li>
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/dashboard/fleet">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Fleet
+                                  {t('fleet')}
                                 </span>
                               </SidebarLink>
                             </li>
@@ -227,7 +229,7 @@ export default function Sidebar({
                                 <path d="M11.92 6.851c.044-.027.09-.05.137-.07.481-.275.758-.68.908-1.256.126-.55.169-.81.357-2.058.075-.498.144-.91.217-1.264-4.122.75-7.087 2.984-9.12 6.284a18.087 18.087 0 0 0-1.985 4.585 17.07 17.07 0 0 0-.354 1.506c-.05.265-.076.448-.086.535a1 1 0 0 1-1.988-.226c.056-.49.209-1.312.502-2.357a20.063 20.063 0 0 1 2.208-5.09C5.31 3.226 9.306.494 14.913.004a1 1 0 0 1 .954 1.494c-.237.414-.375.993-.567 2.267-.197 1.306-.244 1.586-.392 2.235-.285 1.094-.789 1.853-1.552 2.363-.748 3.816-3.976 5.06-8.515 4.326a1 1 0 0 1 .318-1.974c2.954.477 4.918.025 5.808-1.556-.628.085-1.335.121-2.127.121a1 1 0 1 1 0-2c1.458 0 2.434-.116 3.08-.429Z" />
                               </svg>
                               <span className="text-sm font-medium ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Personel
+                                {t('personel')}
                               </span>
                             </div>
                             {/* Icon */}
@@ -247,7 +249,7 @@ export default function Sidebar({
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/staff/distributor-staff">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Distributor Staff
+                                  {t('distributorStaff')}
                                 </span>
                               </SidebarLink>
                             </li>
@@ -297,7 +299,7 @@ export default function Sidebar({
                                 <path d="M12 1a1 1 0 1 0-2 0v2a3 3 0 0 0 3 3h2a1 1 0 1 0 0-2h-2a1 1 0 0 1-1-1V1ZM1 10a1 1 0 1 0 0 2h2a1 1 0 0 1 1 1v2a1 1 0 1 0 2 0v-2a3 3 0 0 0-3-3H1ZM5 0a1 1 0 0 1 1 1v2a3 3 0 0 1-3 3H1a1 1 0 0 1 0-2h2a1 1 0 0 0 1-1V1a1 1 0 0 1 1-1ZM12 13a1 1 0 0 1 1-1h2a1 1 0 1 0 0-2h-2a3 3 0 0 0-3 3v2a1 1 0 1 0 2 0v-2Z" />
                               </svg>
                               <span className="text-sm font-medium ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Accounts
+                                {t('accounts')}
                               </span>
                             </div>
                             {/* Icon */}
@@ -317,35 +319,35 @@ export default function Sidebar({
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/accounts/customers">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Customers
+                                  {t('customers')}
                                 </span>
                               </SidebarLink>
                             </li>
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/accounts/asset-accounts">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  PayGo
+                                  {t('paygo')}
                                 </span>
                               </SidebarLink>
                             </li>
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/accounts/payment-plans">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Payment Plans
+                                  {t('paymentPlans')}
                                 </span>
                               </SidebarLink>
                             </li>
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/accounts/message-template">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Message Templates
+                                  {t('messageTemplates')}
                                 </span>
                               </SidebarLink>
                             </li>
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/accounts/message-group">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Message Groups
+                                  {t('messageGroups')}
                                 </span>
                               </SidebarLink>
                             </li>
@@ -387,7 +389,7 @@ export default function Sidebar({
                                 <path d="M9 6.855A3.502 3.502 0 0 0 8 0a3.5 3.5 0 0 0-1 6.855v1.656L5.534 9.65a3.5 3.5 0 1 0 1.229 1.578L8 10.267l1.238.962a3.5 3.5 0 1 0 1.229-1.578L9 8.511V6.855ZM6.5 3.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0Zm4.803 8.095c.005-.005.01-.01.013-.016l.012-.016a1.5 1.5 0 1 1-.025.032ZM3.5 11c.474 0 .897.22 1.171.563l.013.016.013.017A1.5 1.5 0 1 1 3.5 11Z" />
                               </svg>
                               <span className="text-sm font-medium ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Assets
+                                {t('assets')}
                               </span>
                             </div>
                             {/* Icon */}
@@ -407,14 +409,14 @@ export default function Sidebar({
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/thing/fleet">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Fleets
+                                  {t('fleets')}
                                 </span>
                               </SidebarLink>
                             </li>
                             <li className="mb-1 last:mb-0">
                               <SidebarLink href="/thing/item">
                                 <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                  Items
+                                  {t('items')}
                                 </span>
                               </SidebarLink>
                             </li>
@@ -1562,7 +1564,7 @@ export default function Sidebar({
               className="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
             >
-              <span className="sr-only">Expand / collapse sidebar</span>
+              <span className="sr-only">{t('expandCollapse')}</span>
               <svg
                 className="shrink-0 fill-current text-gray-400 dark:text-gray-500 sidebar-expanded:rotate-180"
                 xmlns="http://www.w3.org/2000/svg"

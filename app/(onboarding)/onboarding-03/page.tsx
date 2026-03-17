@@ -7,8 +7,11 @@ import Link from 'next/link'
 import OnboardingHeader from '../onboarding-header'
 import OnboardingImage from '../onboarding-image'
 import OnboardingProgress from '../onboarding-progress'
+import { useTranslations } from 'next-intl'
 
 export default function Onboarding03() {
+  const t = useTranslations('onboarding')
+
   return (
     <main className="bg-white dark:bg-gray-900">
 
@@ -29,34 +32,34 @@ export default function Onboarding03() {
             <div className="px-4 py-8">
               <div className="max-w-md mx-auto">
 
-                <h1 className="text-3xl text-gray-800 dark:text-gray-100 font-bold mb-6">Company information</h1>
+                <h1 className="text-3xl text-gray-800 dark:text-gray-100 font-bold mb-6">{t('step3Title')}</h1>
                 {/* htmlForm */}
                 <form>
                   <div className="space-y-4 mb-8">
                     {/* Company Name */}
                     <div>
-                      <label className="block text-sm font-medium mb-1" htmlFor="company-name">Company Name <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-medium mb-1" htmlFor="company-name">{t('companyName')} <span className="text-red-500">*</span></label>
                       <input id="company-name" className="form-input w-full" type="text" />
                     </div>
                     {/* City and Postal Code */}
                     <div className="flex space-x-4">
                       <div className="flex-1">
-                        <label className="block text-sm font-medium mb-1" htmlFor="city">City <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-medium mb-1" htmlFor="city">{t('city')} <span className="text-red-500">*</span></label>
                         <input id="city" className="form-input w-full" type="text" />
                       </div>
                       <div className="flex-1">
-                        <label className="block text-sm font-medium mb-1" htmlFor="postal-code">Postal Code <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-medium mb-1" htmlFor="postal-code">{t('postalCode')} <span className="text-red-500">*</span></label>
                         <input id="postal-code" className="form-input w-full" type="text" />
                       </div>
                     </div>
                     {/* Street Address */}
                     <div>
-                      <label className="block text-sm font-medium mb-1" htmlFor="street">Street Address <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-medium mb-1" htmlFor="street">{t('streetAddress')} <span className="text-red-500">*</span></label>
                       <input id="street" className="form-input w-full" type="text" />
                     </div>
                     {/* Country */}
                     <div>
-                      <label className="block text-sm font-medium mb-1" htmlFor="country">Country <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-medium mb-1" htmlFor="country">{t('country')} <span className="text-red-500">*</span></label>
                       <select id="country" className="form-select w-full">
                         <option>USA</option>
                         <option>Italy</option>
@@ -65,8 +68,8 @@ export default function Onboarding03() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Link className="text-sm underline hover:no-underline" href="/onboarding-02">&lt;- Back</Link>
-                    <Link className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white ml-auto" href="/onboarding-04">Next Step -&gt;</Link>
+                    <Link className="text-sm underline hover:no-underline" href="/onboarding-02">{t('back')}</Link>
+                    <Link className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white ml-auto" href="/onboarding-04">{t('nextStep')}</Link>
                   </div>
                 </form>
 

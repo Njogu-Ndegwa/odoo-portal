@@ -1,13 +1,18 @@
+'use client'
+
 import { TableColumn } from '@/components/table/table'
+import { useTranslations } from 'next-intl'
 
 const stateBadge: Record<string, string> = {
     active: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300',
     inactive: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
 }
 
-export const columns: TableColumn<any>[] = [
-    {
-        header: 'Name',
+export function useServiceAccountColumns() {
+    const t = useTranslations('portal.serviceAccounts.columns')
+    return [
+        {
+            header: t('name'),
         accessor: 'name' as keyof any,
         cellRenderer: (value: unknown, item: any) => {
             const name = item.name || '-'
@@ -19,7 +24,7 @@ export const columns: TableColumn<any>[] = [
         }
     },
     {
-        header: 'Class',
+        header: t('class'),
         accessor: 'account_class' as keyof any,
         cellRenderer: (value: unknown, item: any) => (
             <div className="max-w-md truncate">
@@ -28,7 +33,7 @@ export const columns: TableColumn<any>[] = [
         )
     },
     {
-        header: 'State',
+        header: t('state'),
         accessor: 'state' as keyof any,
         cellRenderer: (value: unknown, item: any) => {
             const state = item.state || 'inactive'
@@ -40,7 +45,7 @@ export const columns: TableColumn<any>[] = [
         }
     },
     {
-        header: 'Code',
+        header: t('code'),
         accessor: 'account_code' as keyof any,
         cellRenderer: (value: unknown, item: any) => (
             <div className="max-w-md truncate">
@@ -49,7 +54,7 @@ export const columns: TableColumn<any>[] = [
         )
     },
     {
-        header: 'Parent',
+        header: t('parent'),
         accessor: 'parent_name' as keyof any,
         cellRenderer: (value: unknown, item: any) => (
             <div className="max-w-md truncate">
@@ -57,7 +62,8 @@ export const columns: TableColumn<any>[] = [
             </div>
         )
     },
-]
+    ] as TableColumn<any>[]
+}
 
 export const dropdownOptions = [
     {

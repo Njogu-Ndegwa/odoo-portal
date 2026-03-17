@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { BarChart3, TrendingUp, PieChart, Calendar, Download, Filter, ArrowUp, ArrowDown } from 'lucide-react'
 import Design2Table from '@/components/table/table2'
 import DoughnutChart from '@/components/charts/doughnut-chart'
@@ -28,6 +29,7 @@ interface AnalyticsData {
 }
 
 export default function AnalyticsTab() {
+  const t = useTranslations('fleetDashboard')
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
@@ -136,10 +138,10 @@ export default function AnalyticsTab() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Fleet Analytics & Reports
+              {t('analyticsReports')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
-              Comprehensive insights into fleet performance, efficiency, and health metrics
+              {t('performanceInsights')}
             </p>
           </div>
           
@@ -171,33 +173,33 @@ export default function AnalyticsTab() {
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Average Distance"
+          title={t('averageDistance')}
           value={`${analyticsData.routeEfficiency.avgDistance} km`}
-          subtitle="per route"
+          subtitle={t('perRoute')}
           icon={<BarChart3 className="w-6 h-6" />}
           trend={5.2}
           color="blue"
         />
         <MetricCard
-          title="Average Speed"
+          title={t('averageSpeed')}
           value={`${analyticsData.routeEfficiency.avgSpeed} km/h`}
-          subtitle="fleet average"
+          subtitle={t('fleetAverage')}
           icon={<TrendingUp className="w-6 h-6" />}
           trend={-2.1}
           color="green"
         />
         <MetricCard
-          title="Fuel Saved"
+          title={t('fuelSaved')}
           value={`${analyticsData.routeEfficiency.fuelSaved} L`}
-          subtitle="this month"
+          subtitle={t('thisMonth')}
           icon={<PieChart className="w-6 h-6" />}
           trend={12.8}
           color="purple"
         />
         <MetricCard
-          title="CO₂ Reduced"
+          title={t('co2Reduced')}
           value={`${analyticsData.routeEfficiency.co2Reduced} tons`}
-          subtitle="environmental impact"
+          subtitle={t('environmentalImpact')}
           icon={<Calendar className="w-6 h-6" />}
           trend={8.5}
           color="emerald"

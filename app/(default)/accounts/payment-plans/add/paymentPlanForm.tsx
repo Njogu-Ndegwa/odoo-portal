@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { usePaymentPlanForm } from './usePaymentPlanForm';
 import { useAlert } from '@/app/contexts/alertContext';
+import { useTranslations } from 'next-intl';
 
 interface PaymentPlan {
   _id: string;
@@ -23,8 +24,10 @@ interface FormPaymentPlanProps {
 
 export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
   const router = useRouter();
-  const [isEditing] = useState(!!editData); // Determine if in edit mode
+  const [isEditing] = useState(!!editData);
   const { alert } = useAlert();
+  const t = useTranslations('paymentPlans');
+  const tc = useTranslations('common');
 
   // Helper function to get plan detail value by name
   const getPlanDetailValue = (name: string) => {
@@ -49,10 +52,10 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
     planId: editData?._id,
     onSuccess: () => {
       router.back();
-      alert({ text: `Payment Plan ${isEditing ? 'Updated' : 'Created'} Successfully`, type: "success" });
+      alert({ text: isEditing ? t('updatedSuccess') : t('createdSuccess'), type: "success" });
     },
     onError: () => {
-      alert({ text: `There was a problem ${isEditing ? 'Updating' : 'Creating'} the Payment Plan`, type: "error" });
+      alert({ text: isEditing ? t('updateError') : t('createError'), type: "error" });
     }
   });
 
@@ -79,10 +82,10 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
           className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-3"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          <span>Back</span>
+          <span>{tc('back')}</span>
         </button>
         <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-          {isEditing ? 'Edit Payment Plan' : 'Create a Payment Plan'}
+          {isEditing ? t('editPlan') : t('createPlan')}
         </h1>
       </div>
 
@@ -96,7 +99,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="planName">
-                  Plan Name
+                  {t('form.planName')}
                 </label>
                 <input
                   id="planName"
@@ -113,7 +116,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="planDescription">
-                  Plan Description
+                  {t('form.planDescription')}
                 </label>
                 <input
                   id="planDescription"
@@ -130,7 +133,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="upFrontPrice">
-                  Up Front Price
+                  {t('form.upFrontPrice')}
                 </label>
                 <input
                   id="upFrontPrice"
@@ -148,7 +151,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="uFrontDaysIncluded">
-                  Up Front Days Included
+                  {t('form.upFrontDays')}
                 </label>
                 <input
                   id="uFrontDaysIncluded"
@@ -165,7 +168,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="freecodePrice">
-                  Freecode Price
+                  {t('form.freeCodePrice')}
                 </label>
                 <input
                   id="freecodePrice"
@@ -183,7 +186,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="hourPrice">
-                  Hour Price
+                  {t('form.hourPrice')}
                 </label>
                 <input
                   id="hourPrice"
@@ -201,7 +204,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="daysToCutOff">
-                  Days to Cut Off
+                  {t('form.daysToCutOff')}
                 </label>
                 <input
                   id="daysToCutOff"
@@ -218,7 +221,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="expectedPaid">
-                  Expected Paid
+                  {t('form.expectedPaid')}
                 </label>
                 <input
                   id="expectedPaid"
@@ -236,7 +239,7 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
             <div>
               <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="minimumPaymentAmount">
-                  Minimum Payment Amount
+                  {t('form.minimumPayment')}
                 </label>
                 <input
                   id="minimumPaymentAmount"
@@ -260,8 +263,8 @@ export default function FormPaymentPlan({ editData }: FormPaymentPlanProps) {
                     }`}
                 >
                   {isLoading
-                    ? `${isEditing ? 'Updating...' : 'Creating...'}`
-                    : `${isEditing ? 'Update' : 'Create'} Payment Plan`}
+                    ? (isEditing ? tc('updating') : tc('creating'))
+                    : `${isEditing ? tc('update') : tc('create')} ${t('title')}`}
                 </button>
               </div>
             </div>

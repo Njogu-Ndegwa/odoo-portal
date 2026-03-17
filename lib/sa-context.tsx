@@ -4,7 +4,9 @@ import React, {
   useState,
   useContext,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   ReactNode,
 } from "react";
 import type { ServiceAccount } from "@/lib/sa-types";
@@ -36,6 +38,7 @@ export const SAProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     () => readSAFromStorage()
   );
   const [serviceAccounts, setServiceAccounts] = useState<ServiceAccount[]>([]);
+  const fetchedRef = useRef(false);
 
   const selectSA = useCallback((sa: ServiceAccount) => {
     saveSelectedSA(sa);
@@ -58,6 +61,13 @@ export const SAProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       return [];
     }
   }, []);
+
+  useEffect(() => {
+    if (currentSA && serviceAccounts.length === 0 && !fetchedRef.current) {
+      fetchedRef.current = true;
+      refreshSAs();
+    }
+  }, [currentSA, serviceAccounts.length, refreshSAs]);
 
   const value = useMemo<SAContextType>(() => {
     const role = currentSA?.my_role ?? null;

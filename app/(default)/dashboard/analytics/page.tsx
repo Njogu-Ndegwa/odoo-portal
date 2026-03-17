@@ -15,8 +15,11 @@ import AnalyticsCard08 from './analytics-card-08'
 import AnalyticsCard09 from './analytics-card-09'
 import AnalyticsCard10 from './analytics-card-10'
 import AnalyticsCard11 from './analytics-card-11'
+import { useTranslations } from 'next-intl'
 
 export default function Analytics() {
+  const t = useTranslations('sidebar')
+
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
 
@@ -25,7 +28,7 @@ export default function Analytics() {
 
         {/* Left: Title */}
         <div className="mb-4 sm:mb-0">
-          <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Analytics</h1>
+          <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">{t('analytics')}</h1>
         </div>
 
         {/* Right: Actions */}

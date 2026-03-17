@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl'
+
 interface PaginationClassicProps {
   currentPage?: number;
   totalItems?: number;
@@ -18,6 +20,7 @@ export default function PaginationClassic({
   onPreviousPage
 }: PaginationClassicProps) {
   // Calculate display values
+  const t = useTranslations('pagination')
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(startItem + itemsPerPage - 1, totalItems);
 
@@ -26,10 +29,10 @@ export default function PaginationClassic({
       <div className="text-sm text-gray-500 text-center sm:text-left">
         {totalItems > 0 ? (
           <>
-            Showing <span className="font-medium text-gray-600 dark:text-gray-300">{startItem}</span> to <span className="font-medium text-gray-600 dark:text-gray-300">{endItem}</span> of <span className="font-medium text-gray-600 dark:text-gray-300">{totalItems}</span> results
+            {t('showing')} <span className="font-medium text-gray-600 dark:text-gray-300">{startItem}</span> {t('to')} <span className="font-medium text-gray-600 dark:text-gray-300">{endItem}</span> {t('of')} <span className="font-medium text-gray-600 dark:text-gray-300">{totalItems}</span> {t('results')}
           </>
         ) : (
-          <span>No results found</span>
+          <span>{t('noResults')}</span>
         )}
       </div>
       <nav role="navigation" aria-label="Navigation">
@@ -42,7 +45,7 @@ export default function PaginationClassic({
               onClick={onPreviousPage}
               disabled={!hasPreviousPage}
             >
-              &lt;- Previous
+              {t('previous')}
             </button>
           </li>
           <li className="ml-3 first:ml-0">
@@ -53,7 +56,7 @@ export default function PaginationClassic({
               onClick={onNextPage}
               disabled={!hasNextPage}
             >
-              Next -&gt;
+              {t('next')}
             </button>
           </li>
         </ul>

@@ -13,15 +13,18 @@ import DashboardCard08 from './dashboard-card-08'
 import DashboardCard09 from './dashboard-card-09'
 import DashboardCard10 from './dashboard-card-10'
 import DashboardCard11 from './dashboard-card-11'
+import { useTranslations } from 'next-intl'
 
 export default function Dashboard() {
+  const t = useTranslations('dashboard')
+
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
       {/* Dashboard actions */}
       <div className="sm:flex sm:justify-between sm:items-center mb-8">
         {/* Left: Title */}
         <div className="mb-4 sm:mb-0">
-          <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">{t('title')}</h1>
         </div>
         {/* Right: Actions */}
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
@@ -34,7 +37,7 @@ export default function Dashboard() {
             <svg className="fill-current shrink-0 xs:hidden" width="16" height="16" viewBox="0 0 16 16">
               <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
             </svg>
-            <span className="max-xs:sr-only">Add View</span>
+            <span className="max-xs:sr-only">{t('addView')}</span>
           </button>              
         </div>
       </div>

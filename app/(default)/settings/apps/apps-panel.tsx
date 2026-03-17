@@ -1,10 +1,16 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
+
 export default function AppsPanel() {
+  const t = useTranslations('settings.apps')
+
   return (
     <div className="grow">
 
       {/* Panel body */}
       <div className="p-6">
-        <h2 className="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-5">Connected Apps</h2>
+        <h2 className="text-2xl text-gray-800 dark:text-gray-100 font-bold mb-5">{t('title')}</h2>
 
         {/* General */}
         <div className="mb-6">
@@ -12,16 +18,16 @@ export default function AppsPanel() {
           <div className="mb-4 border-b border-gray-200 dark:border-gray-700/60">
             <ul className="text-sm font-medium flex flex-nowrap -mx-4 sm:-mx-6 lg:-mx-8 overflow-x-scroll no-scrollbar">
               <li className="pb-3 mr-6 last:mr-0 first:pl-4 sm:first:pl-6 lg:first:pl-8 last:pr-4 sm:last:pr-6 lg:last:pr-8">
-                <a className="text-violet-500 whitespace-nowrap" href="#0">View All</a>
+                <a className="text-violet-500 whitespace-nowrap" href="#0">{t('viewAll')}</a>
               </li>
               <li className="pb-3 mr-6 last:mr-0 first:pl-4 sm:first:pl-6 lg:first:pl-8 last:pr-4 sm:last:pr-6 lg:last:pr-8">
-                <a className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 whitespace-nowrap" href="#0">Utility</a>
+                <a className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 whitespace-nowrap" href="#0">{t('utility')}</a>
               </li>
               <li className="pb-3 mr-6 last:mr-0 first:pl-4 sm:first:pl-6 lg:first:pl-8 last:pr-4 sm:last:pr-6 lg:last:pr-8">
-                <a className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 whitespace-nowrap" href="#0">Marketing</a>
+                <a className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 whitespace-nowrap" href="#0">{t('marketing')}</a>
               </li>
               <li className="pb-3 mr-6 last:mr-0 first:pl-4 sm:first:pl-6 lg:first:pl-8 last:pr-4 sm:last:pr-6 lg:last:pr-8">
-                <a className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 whitespace-nowrap" href="#0">Development</a>
+                <a className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 whitespace-nowrap" href="#0">{t('development')}</a>
               </li>
             </ul>
           </div>
@@ -68,7 +74,7 @@ export default function AppsPanel() {
                       <svg className="w-3 h-3 shrink-0 fill-current text-green-500 mr-2" viewBox="0 0 12 12">
                         <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
                       </svg>
-                      <span>Connected</span>
+                      <span>{t('connected')}</span>
                     </button>
                   </div>
                 </footer>
@@ -112,7 +118,7 @@ export default function AppsPanel() {
                       <svg className="w-3 h-3 shrink-0 fill-current text-green-500 mr-2" viewBox="0 0 12 12">
                         <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
                       </svg>
-                      <span>Connected</span>
+                      <span>{t('connected')}</span>
                     </button>
                   </div>
                 </footer>
@@ -156,7 +162,7 @@ export default function AppsPanel() {
                       <svg className="w-3 h-3 shrink-0 fill-current text-green-500 mr-2" viewBox="0 0 12 12">
                         <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
                       </svg>
-                      <span>Connected</span>
+                      <span>{t('connected')}</span>
                     </button>
                   </div>
                 </footer>
@@ -200,7 +206,7 @@ export default function AppsPanel() {
                       <svg className="w-3 h-3 shrink-0 fill-current text-green-500 mr-2" viewBox="0 0 12 12">
                         <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
                       </svg>
-                      <span>Connected</span>
+                      <span>{t('connected')}</span>
                     </button>
                   </div>
                 </footer>
@@ -244,7 +250,7 @@ export default function AppsPanel() {
                       <svg className="w-3 h-3 shrink-0 fill-current text-green-500 mr-2" viewBox="0 0 12 12">
                         <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
                       </svg>
-                      <span>Connected</span>
+                      <span>{t('connected')}</span>
                     </button>
                   </div>
                 </footer>
@@ -288,7 +294,7 @@ export default function AppsPanel() {
                       <svg className="w-3 h-3 shrink-0 fill-current text-green-500 mr-2" viewBox="0 0 12 12">
                         <path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 00.28 6.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 1.28z" />
                       </svg>
-                      <span>Connected</span>
+                      <span>{t('connected')}</span>
                     </button>
                   </div>
                 </footer>
@@ -299,7 +305,7 @@ export default function AppsPanel() {
 
         {/* Trending Categories cards */}
         <section>
-          <h3 className="text-xl leading-snug text-gray-800 dark:text-gray-100 font-bold mt-6 mb-5">Trending Categories</h3>
+          <h3 className="text-xl leading-snug text-gray-800 dark:text-gray-100 font-bold mt-6 mb-5">{t('trendingCategories')}</h3>
           <div className="grid grid-cols-12 gap-6">
             {/* Card 1 */}
             <div className="col-span-full xl:col-span-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/60 shadow-sm rounded-lg">
@@ -316,7 +322,7 @@ export default function AppsPanel() {
                     {/* Left side */}
                     <div className="text-sm text-gray-500 dark:text-gray-400 italic">400+ Apps</div>
                     {/* Right side */}
-                    <a className="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0">Explore -&gt;</a>
+                    <a className="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0">{t('explore')}</a>
                   </div>
                 </footer>
               </div>
@@ -336,7 +342,7 @@ export default function AppsPanel() {
                     {/* Left side */}
                     <div className="text-sm text-gray-500 dark:text-gray-400 italic">320+ Apps</div>
                     {/* Right side */}
-                    <a className="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0">Explore -&gt;</a>
+                    <a className="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0">{t('explore')}</a>
                   </div>
                 </footer>
               </div>
@@ -356,7 +362,7 @@ export default function AppsPanel() {
                     {/* Left side */}
                     <div className="text-sm text-gray-500 dark:text-gray-400 italic">270+ Apps</div>
                     {/* Right side */}
-                    <a className="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0">Explore -&gt;</a>
+                    <a className="text-sm font-medium text-violet-500 hover:text-violet-600 dark:hover:text-violet-400" href="#0">{t('explore')}</a>
                   </div>
                 </footer>
               </div>

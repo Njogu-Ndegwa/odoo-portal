@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
 import { useQuery } from '@apollo/client'
 import Link from 'next/link'
 import Table from '@/components/table/table'
@@ -13,7 +14,7 @@ import SearchForm from '@/components/search-form'
 import PaginationClassic from '@/components/pagination-classic'
 import PageSizeSelect from '@/components/page-size-select'
 import { SelectedItemsProvider, useSelectedItems } from '@/app/selected-items-context'
-import { columns, dropdownOptions } from './tableColumns'
+import { useProductColumns, dropdownOptions } from './tableColumns'
 import { actions } from './tableActions'
 import { getSalesUser } from '@/lib/odoo-auth'
 import { PRODUCT_UNITS_QUERY } from '@/lib/portal/queries'
@@ -52,23 +53,6 @@ const advancedFilterDefs: FilterDefinition[] = [
   { key: 'recently_updated', label: 'Recently updated only' },
 ]
 
-const sortOptions = [
-  { value: '', label: 'Default' },
-  { value: 'name', label: 'Name (A-Z)' },
-  { value: 'date', label: 'Date (newest)' },
-  { value: 'updated', label: 'Updated (newest)' },
-  { value: 'price', label: 'Price (high-low)' },
-]
-
-const metricOptions = [
-  { value: '', label: 'All Metrics' },
-  { value: 'piece', label: 'Piece' },
-  { value: 'duration', label: 'Duration' },
-  { value: 'count', label: 'Count' },
-  { value: 'energy', label: 'Energy' },
-  { value: 'distance', label: 'Distance' },
-]
-
 type CategoryFilter = 'all' | 'physical' | 'service' | 'contract' | 'digital'
 
 export default function PortalProductsPageWrapper() {
@@ -93,6 +77,33 @@ function PortalProductsPage() {
   const [metricFilter, setMetricFilter] = useState('')
 
   const { setSelectedItems } = useSelectedItems()
+  const t = useTranslations('portal.products')
+  const tp = useTranslations('portal')
+  const tc = useTranslations('common')
+  const columns = useProductColumns()
+
+  const categoryPills: { key: CategoryFilter; label: string }[] = [
+    { key: 'all', label: t('categories.all') },
+    { key: 'physical', label: t('categories.physical') },
+    { key: 'service', label: t('categories.service') },
+    { key: 'contract', label: t('categories.contract') },
+    { key: 'digital', label: t('categories.digital') },
+  ]
+  const sortOptions = [
+    { value: '', label: t('sortOptions.default') },
+    { value: 'name', label: t('sortOptions.nameAZ') },
+    { value: 'date', label: t('sortOptions.dateNewest') },
+    { value: 'updated', label: t('sortOptions.updated') },
+    { value: 'price', label: t('sortOptions.price') },
+  ]
+  const metricOptions = [
+    { value: '', label: t('metrics.all') },
+    { value: 'piece', label: t('metrics.piece') },
+    { value: 'duration', label: t('metrics.duration') },
+    { value: 'count', label: t('metrics.count') },
+    { value: 'energy', label: t('metrics.energy') },
+    { value: 'distance', label: t('metrics.distance') },
+  ]
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500)
@@ -177,34 +188,26 @@ function PortalProductsPage() {
     setSelectedItems([])
   }
 
-  const categoryPills: { key: CategoryFilter; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'physical', label: 'Physical' },
-    { key: 'service', label: 'Service' },
-    { key: 'contract', label: 'Contract' },
-    { key: 'digital', label: 'Digital' },
-  ]
-
   return (
     <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-[96rem] mx-auto">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        <Link href="/portal" className="hover:text-violet-500">Portal</Link>
+        <Link href="/portal" className="hover:text-violet-500">{tp('portal')}</Link>
         <span className="mx-2">/</span>
-        <span className="text-gray-800 dark:text-gray-100 font-medium">Products</span>
+        <span className="text-gray-800 dark:text-gray-100 font-medium">{t('title')}</span>
       </nav>
 
       {/* Header section */}
       <div className="sm:flex sm:justify-between sm:items-center mb-5">
         <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl md:text-3xl text-gray-800 dark:text-gray-100 font-bold">
-            Products
+            {t('title')}
           </h1>
         </div>
 
         <div className="grid grid-flow-col sm:auto-cols-max justify-start sm:justify-end gap-2">
           <SearchForm
-            placeholder="Search"
+            placeholder={tc('search')}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
           />
@@ -212,7 +215,7 @@ function PortalProductsPage() {
             options={sortOptions}
             selected={sortValue}
             onChange={setSortValue}
-            placeholder="Sort"
+            placeholder={t('sort')}
             align="right"
             icon={
               <svg className="fill-current text-gray-400 dark:text-gray-500" width="16" height="16" viewBox="0 0 16 16">
@@ -227,7 +230,7 @@ function PortalProductsPage() {
             <svg className="fill-current shrink-0 xs:hidden" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
               <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
             </svg>
-            <span className="max-xs:sr-only">Add</span>
+            <span className="max-xs:sr-only">{tc('add')}</span>
           </Link>
         </div>
       </div>
@@ -261,7 +264,7 @@ function PortalProductsPage() {
             options={metricOptions}
             selected={metricFilter}
             onChange={setMetricFilter}
-            placeholder="Metric"
+            placeholder={t('metric')}
             align="right"
           />
           <DateSelect

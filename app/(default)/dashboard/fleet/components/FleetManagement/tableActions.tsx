@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Pencil, Trash2, Plus, Settings, MoreHorizontal } from 'lucide-react'
 import FeedbackModal from '@/components/feedback-modal'
 import { useAlert } from '@/app/contexts/alertContext'
@@ -15,6 +16,7 @@ interface ActionProps {
 
 export const actions = ({ row, onDelete, onViewDetails, onAssignDevices }: ActionProps) => {
   const router = useRouter()
+  const t = useTranslations('fleetDashboard')
   const [dangerModalOpen, setDangerModalOpen] = useState(false)
   const { alert } = useAlert()
   
@@ -93,37 +95,37 @@ export const actions = ({ row, onDelete, onViewDetails, onAssignDevices }: Actio
       <button
         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
         onClick={handleEdit}
-        title="Edit Fleet"
+        title={t('editFleet')}
       >
         <Pencil className="w-4 h-4 text-gray-500" />
-        <span className="sr-only">Edit</span>
+        <span className="sr-only">{t('editFleet')}</span>
       </button>
       
       <button
         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
         onClick={handleDelete}
-        title="Delete Fleet"
+        title={t('deleteFleet')}
       >
         <Trash2 className="w-4 h-4 text-red-500" />
-        <span className="sr-only">Delete</span>
+        <span className="sr-only">{t('deleteFleet')}</span>
       </button>
       
       <button
         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
         onClick={handleMore}
-        title="More Options"
+        title={t('moreOptionsMenu')}
       >
         <MoreHorizontal className="w-4 h-4 text-gray-500" />
-        <span className="sr-only">More options</span>
+        <span className="sr-only">{t('moreOptionsMenu')}</span>
       </button>
       
       <FeedbackModal
         isOpen={dangerModalOpen}
         setIsOpen={setDangerModalOpen}
         variant="danger"
-        title={`Delete Fleet?`}
-        content="Are you sure you want to delete this fleet? This action cannot be undone."
-        confirmButtonLabel="Yes, Delete it"
+        title={t('deleteFleet')}
+        content={t('deleteFleetSingleConfirm')}
+        confirmButtonLabel={t('deleteFleet')}
         onConfirm={handleConfirmDelete}
       />
     </>

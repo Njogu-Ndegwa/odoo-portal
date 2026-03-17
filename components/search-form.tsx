@@ -1,5 +1,6 @@
-'use-client'
+'use client'
 import React from "react";
+import { useTranslations } from "next-intl";
 
 interface SearchFormProps {
   placeholder?: string;
@@ -12,10 +13,11 @@ interface SearchFormProps {
   searchTerm,
   setSearchTerm,
 }) => {
+  const t = useTranslations('common')
   return (
     <form className="relative">
       <label htmlFor="action-search" className="sr-only">
-        Search
+        {t('search')}
       </label>
       <input
         id="action-search"
@@ -29,7 +31,7 @@ interface SearchFormProps {
       <button
         className="absolute inset-0 right-auto group"
         type="submit"
-        aria-label="Search"
+        aria-label={t('search')}
       >
         <svg
           className="shrink-0 fill-current text-gray-400 dark:text-gray-500 group-hover:text-gray-500 dark:group-hover:text-gray-400 ml-3 mr-2"

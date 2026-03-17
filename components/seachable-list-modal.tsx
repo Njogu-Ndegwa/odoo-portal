@@ -2,6 +2,7 @@
 
 import { Dialog, Transition, TransitionChild, DialogPanel } from '@headlessui/react'
 import { Fragment, ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface SearchableListModalProps<T> {
     isOpen: boolean
@@ -25,7 +26,7 @@ export function SearchableListModal<T extends { id: any }>({
     setIsOpen,
     title,
     items,
-    searchPlaceholder = 'Search...',
+    searchPlaceholder,
     searchValue = '',
     onSearch,
     renderItem,
@@ -33,9 +34,12 @@ export function SearchableListModal<T extends { id: any }>({
     actionLabel,
     onAction,
     variant = 'default',
-    sectionTitle = 'Recent searches',
+    sectionTitle,
     selectedItemId
 }: SearchableListModalProps<T>) {
+    const t = useTranslations('searchableModal')
+    const resolvedPlaceholder = searchPlaceholder ?? t('searchPlaceholder')
+    const resolvedSectionTitle = sectionTitle ?? t('recentSearches')
     return (
         <Transition appear show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-50" onClose={() => setIsOpen(false)}>
@@ -69,7 +73,7 @@ export function SearchableListModal<T extends { id: any }>({
                                         <input
                                             className="w-full dark:text-gray-300 bg-white dark:bg-gray-800 border-0 focus:ring-transparent placeholder-gray-400 dark:placeholder-gray-500 appearance-none py-3 pl-10 pr-4"
                                             type="search"
-                                            placeholder={searchPlaceholder}
+                                            placeholder={resolvedPlaceholder}
                                             value={searchValue}
                                             onChange={(e) => onSearch?.(e.target.value)}
                                         />
@@ -94,7 +98,7 @@ export function SearchableListModal<T extends { id: any }>({
                                 <div className="mb-3 last:mb-0">
                                     {variant === 'with-sections' && (
                                         <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase px-2 mb-2">
-                                            {sectionTitle}
+                                            {resolvedSectionTitle}
                                         </div>
                                     )}
 
@@ -121,7 +125,7 @@ export function SearchableListModal<T extends { id: any }>({
                                             className="btn-sm border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300"
                                             onClick={() => setIsOpen(false)}
                                         >
-                                            Cancel
+                                            {t('cancel')}
                                         </button>
                                         <button
                                             className="btn-sm bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"

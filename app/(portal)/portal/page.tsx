@@ -1,10 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { useSA } from '@/lib/sa-context'
 
+type AppletKey = 'customers' | 'products' | 'orders' | 'sales' | 'accounting' | 'inventory' | 'contacts' | 'reports' | 'helpdesk' | 'accounts' | 'settings'
+
 type Applet = {
-  title: string
+  key: AppletKey
   href: string
   gradient: string
   enabled: boolean
@@ -14,7 +17,7 @@ type Applet = {
 
 const applets: Applet[] = [
   {
-    title: 'Customers',
+    key: 'customers',
     href: '/portal/customers',
     gradient: 'from-violet-500 to-violet-600',
     enabled: true,
@@ -28,7 +31,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Products',
+    key: 'products',
     href: '/portal/products',
     gradient: 'from-amber-400 to-amber-500',
     enabled: true,
@@ -42,7 +45,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Orders',
+    key: 'orders',
     href: '/portal/orders',
     gradient: 'from-green-500 to-green-600',
     enabled: true,
@@ -57,7 +60,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Sales',
+    key: 'sales',
     href: '#',
     gradient: 'from-emerald-500 to-emerald-600',
     enabled: false,
@@ -71,7 +74,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Accounting',
+    key: 'accounting',
     href: '#',
     gradient: 'from-teal-500 to-teal-600',
     enabled: false,
@@ -90,7 +93,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Inventory',
+    key: 'inventory',
     href: '#',
     gradient: 'from-orange-400 to-orange-500',
     enabled: false,
@@ -106,7 +109,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Contacts',
+    key: 'contacts',
     href: '#',
     gradient: 'from-rose-400 to-rose-500',
     enabled: false,
@@ -122,7 +125,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Reports',
+    key: 'reports',
     href: '#',
     gradient: 'from-indigo-400 to-indigo-500',
     enabled: false,
@@ -141,7 +144,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Helpdesk',
+    key: 'helpdesk',
     href: '#',
     gradient: 'from-yellow-400 to-yellow-500',
     enabled: false,
@@ -157,7 +160,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Accounts',
+    key: 'accounts',
     href: '/portal/service-accounts',
     gradient: 'from-violet-600 to-violet-700',
     enabled: true,
@@ -174,7 +177,7 @@ const applets: Applet[] = [
     ),
   },
   {
-    title: 'Settings',
+    key: 'settings',
     href: '/settings',
     gradient: 'from-gray-500 to-gray-600',
     enabled: true,
@@ -196,8 +199,9 @@ const applets: Applet[] = [
 ]
 
 export default function PortalPage() {
-  const { isAdmin } = useSA()
-  const visibleApplets = applets.filter((a) => !a.adminOnly || isAdmin)
+  const { isAdmin, hasSA } = useSA()
+  const t = useTranslations('portal.applets')
+  const visibleApplets = applets.filter((a) => !a.adminOnly || isAdmin || !hasSA)
 
   return (
     <div className="flex items-center justify-center min-h-full px-4 sm:px-6 lg:px-8">
@@ -206,7 +210,7 @@ export default function PortalPage() {
           {visibleApplets.map((applet) =>
             applet.enabled ? (
               <Link
-                key={applet.title}
+                key={applet.key}
                 href={applet.href}
                 className="group flex flex-col items-center gap-3 text-center"
               >
@@ -216,12 +220,12 @@ export default function PortalPage() {
                   {applet.icon}
                 </div>
                 <span className="text-[13px] font-medium text-gray-700 dark:text-gray-300 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors duration-200">
-                  {applet.title}
+                  {t(applet.key)}
                 </span>
               </Link>
             ) : (
               <div
-                key={applet.title}
+                key={applet.key}
                 className="flex flex-col items-center gap-3 text-center cursor-default"
               >
                 <div
@@ -230,7 +234,7 @@ export default function PortalPage() {
                   {applet.icon}
                 </div>
                 <span className="text-[13px] font-medium text-gray-400 dark:text-gray-600">
-                  {applet.title}
+                  {t(applet.key)}
                 </span>
               </div>
             )

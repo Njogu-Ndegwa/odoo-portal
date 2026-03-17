@@ -98,6 +98,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Calendar, Filter, RefreshCw, BarChart3, Truck, Smartphone, TrendingUp } from 'lucide-react'
 
 // Import components (these would be separate files in your project)
@@ -111,31 +112,32 @@ type TabType = 'overview' | 'fleets' | 'devices' | 'analytics'
 export default function FleetDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const t = useTranslations('fleetDashboard')
 
   const tabs = [
     { 
       id: 'overview', 
-      label: 'Fleet Overview', 
+      label: t('fleetOverview'), 
       icon: BarChart3,
-      description: 'Real-time fleet status and metrics'
+      description: t('realTimeStatus')
     },
     { 
       id: 'fleets', 
-      label: 'Fleet Management', 
+      label: t('fleetManagement'), 
       icon: Truck,
-      description: 'Manage fleet configurations and assignments'
+      description: t('manageConfigurations')
     },
     { 
       id: 'devices', 
-      label: 'Device Monitoring', 
+      label: t('deviceMonitoring'), 
       icon: Smartphone,
-      description: 'Monitor individual device performance'
+      description: t('monitorPerformance')
     },
     { 
       id: 'analytics', 
-      label: 'Analytics & Reports', 
+      label: t('analyticsReports'), 
       icon: TrendingUp,
-      description: 'Performance insights and trends'
+      description: t('performanceInsights')
     },
   ]
 
@@ -175,10 +177,10 @@ export default function FleetDashboard() {
                 </div>
                 <div>
                   <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                    Omnivoltaic Fleet Dashboard
+                    {t('title')}
                   </h1>
                   <p className="text-gray-600 dark:text-gray-400 mt-1">
-                    Monitor and manage your fleet assets in real-time
+                    {t('subtitle')}
                   </p>
                 </div>
               </div>
@@ -188,12 +190,12 @@ export default function FleetDashboard() {
             <div className="flex items-center gap-3">
               <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm">
                 <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('filter')}</span>
               </button>
               
               <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm">
                 <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('dateRange')}</span>
               </button>
               
               <button 
@@ -203,7 +205,7 @@ export default function FleetDashboard() {
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 <span className="text-sm font-medium">
-                  {isRefreshing ? 'Refreshing...' : 'Refresh All'}
+                  {isRefreshing ? t('refreshing') : t('refreshAll')}
                 </span>
               </button>
             </div>

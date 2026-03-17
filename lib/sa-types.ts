@@ -5,7 +5,7 @@
 export type SARoleCode = 'admin' | 'staff' | 'agent'
 export type SAMembershipState = 'active' | 'suspended' | 'revoked'
 export type SAScopePolicy = 'sa_wide' | 'assigned_plus_unassigned' | 'assigned_only'
-export type SAAccountClass = 'outlet' | string
+export type SAAccountClass = 'OVAC' | 'EXTC'
 export type SAState = 'active' | 'inactive'
 
 // The shape returned by GET /api/me/service-accounts → service_accounts[]
@@ -76,22 +76,29 @@ export interface SAMutationResponse {
 }
 
 // SA members
+export interface SAMemberPerson {
+  id: number
+  name: string
+  email: string | false
+  phone: string | false
+}
+
 export interface SAMember {
   id: number
-  person_partner_id: number
-  person_name: string
-  person_email: string | null
   role_code: SARoleCode
   membership_state: SAMembershipState
-  scope_policy: SAScopePolicy
-  effective_from: string | null
-  effective_to: string | null
+  scope_policy: SAScopePolicy | null
+  effective_from: string | false
+  effective_to: string | false
+  account_id: number
+  person: SAMemberPerson
 }
 
 export interface SAMemberListResponse {
   success: boolean
+  account_id: number
+  total: number
   members: SAMember[]
-  count: number
 }
 
 export interface SAMemberAddPayload {

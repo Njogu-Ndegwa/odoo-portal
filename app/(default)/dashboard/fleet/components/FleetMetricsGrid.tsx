@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 interface FleetMetricsGridProps {
   totalDevices: number
   reportingDevices: number
@@ -13,19 +15,20 @@ export default function FleetMetricsGrid({
   missingAssets,
   healthScore
 }: FleetMetricsGridProps) {
+  const t = useTranslations('fleetDashboard')
   const reportingPercentage = totalDevices > 0 ? ((reportingDevices / totalDevices) * 100).toFixed(1) : '0'
   
   const metrics = [
     {
-      title: 'Total Devices',
+      title: t('totalDevices'),
       value: totalDevices.toLocaleString(),
-      subtitle: 'Expected fleet size',
+      subtitle: t('expectedFleetSize'),
       color: 'text-gray-800 dark:text-gray-100',
       bgColor: 'bg-gray-50 dark:bg-gray-700/50',
       icon: '📱'
     },
     {
-      title: 'Reporting Devices',
+      title: t('activeDevices'),
       value: reportingDevices.toLocaleString(),
       subtitle: `${reportingPercentage}% of fleet`,
       color: 'text-green-600 dark:text-green-400',
@@ -33,17 +36,17 @@ export default function FleetMetricsGrid({
       icon: '✅'
     },
     {
-      title: 'Missing Assets',
+      title: t('missingAssets'),
       value: missingAssets.toLocaleString(),
-      subtitle: 'Require attention',
+      subtitle: t('requireAttention'),
       color: 'text-red-600 dark:text-red-400',
       bgColor: 'bg-red-50 dark:bg-red-900/20',
       icon: '⚠️'
     },
     {
-      title: 'Fleet Health',
+      title: t('fleetHealth'),
       value: `${healthScore}%`,
-      subtitle: 'Overall score',
+      subtitle: t('overallPerformance'),
       color: healthScore >= 90 ? 'text-green-600 dark:text-green-400' : 
              healthScore >= 75 ? 'text-yellow-600 dark:text-yellow-400' : 
              'text-red-600 dark:text-red-400',

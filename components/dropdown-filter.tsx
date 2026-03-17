@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, type ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 import { Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react'
 
 export interface FilterDefinition {
@@ -16,14 +17,17 @@ interface DropdownFilterProps {
   renderExtra?: (draftValues: Record<string, boolean>) => ReactNode;
 }
 
-const defaultFilters: FilterDefinition[] = [
-  { key: 'direct_vs_indirect', label: 'Direct VS Indirect' },
-  { key: 'real_time_value', label: 'Real Time Value' },
-  { key: 'top_channels', label: 'Top Channels' },
-  { key: 'sales_vs_refunds', label: 'Sales VS Refunds' },
-  { key: 'last_order', label: 'Last Order' },
-  { key: 'total_spent', label: 'Total Spent' },
-]
+function useDefaultFilters(): FilterDefinition[] {
+  const t = useTranslations('filters')
+  return [
+    { key: 'direct_vs_indirect', label: t('directVsIndirect') },
+    { key: 'real_time_value', label: t('realTimeValue') },
+    { key: 'top_channels', label: t('topChannels') },
+    { key: 'sales_vs_refunds', label: t('salesVsRefunds') },
+    { key: 'last_order', label: t('lastOrder') },
+    { key: 'total_spent', label: t('totalSpent') },
+  ]
+}
 
 export default function DropdownFilter({
   align,
@@ -33,7 +37,9 @@ export default function DropdownFilter({
   renderExtra,
 }: DropdownFilterProps) {
 
-  const filterItems = filters || defaultFilters
+  const t = useTranslations('filters')
+  const defaultFilterItems = useDefaultFilters()
+  const filterItems = filters || defaultFilterItems
   const isControlled = controlledValues !== undefined && onChange !== undefined
 
   const [internalValues, setInternalValues] = useState<Record<string, boolean>>({})
@@ -71,7 +77,7 @@ export default function DropdownFilter({
         return (
           <>
             <PopoverButton className="btn px-2.5 bg-white dark:bg-gray-800 border-gray-200 hover:border-gray-300 dark:border-gray-700/60 dark:hover:border-gray-600 text-gray-400 dark:text-gray-500">
-              <span className="sr-only">Filter</span><wbr />
+              <span className="sr-only">{t('filter')}</span><wbr />
               <svg className="fill-current" width="16" height="16" viewBox="0 0 16 16">
                 <path d="M0 3a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H1a1 1 0 0 1-1-1ZM3 8a1 1 0 0 1 1-1h8a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1ZM7 12a1 1 0 1 0 0 2h2a1 1 0 1 0 0-2H7Z" />
               </svg>
@@ -93,7 +99,7 @@ export default function DropdownFilter({
               <PopoverPanel>
                 {({ close }) => (
                   <>
-                    <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase pt-1.5 pb-2 px-3">Filters</div>
+                    <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase pt-1.5 pb-2 px-3">{t('filters')}</div>
                     <ul className="mb-4">
                       {filterItems.map((filter) => (
                         <li key={filter.key} className="py-1 px-3">
@@ -121,7 +127,7 @@ export default function DropdownFilter({
                             className="btn-xs bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-red-500"
                             onClick={handleClear}
                           >
-                            Clear
+                            {t('clear')}
                           </button>
                         </li>
                         <li>
@@ -129,7 +135,7 @@ export default function DropdownFilter({
                             className="btn-xs bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-gray-800 dark:text-gray-300"
                             onClick={() => handleApply(close)}
                           >
-                            Apply
+                            {t('apply')}
                           </button>
                         </li>
                       </ul>

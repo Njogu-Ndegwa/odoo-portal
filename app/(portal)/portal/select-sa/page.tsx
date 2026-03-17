@@ -2,17 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth-context'
 import { useSA } from '@/lib/sa-context'
 import { fetchMyServiceAccounts } from '@/lib/sa-api'
 import { getSalesToken, getSelectedSAId } from '@/lib/odoo-auth'
 import type { ServiceAccount } from '@/lib/sa-types'
-
-const roleBadge: Record<string, { label: string; color: string }> = {
-  admin: { label: 'Admin', color: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300' },
-  staff: { label: 'Staff', color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' },
-  agent: { label: 'Agent', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' },
-}
 
 const classBadge: Record<string, string> = {
   outlet: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
@@ -20,11 +15,19 @@ const classBadge: Record<string, string> = {
 
 export default function SelectSAPage() {
   const router = useRouter()
+  const t = useTranslations('portal.selectAccount')
+  const tc = useTranslations('common')
   const { user, pendingSAs } = useAuth()
   const { selectSA, setServiceAccounts } = useSA()
   const [accounts, setAccounts] = useState<ServiceAccount[]>(pendingSAs)
   const [loading, setLoading] = useState(pendingSAs.length === 0)
   const [error, setError] = useState<string | null>(null)
+
+  const roleBadge: Record<string, { label: string; color: string }> = {
+    admin: { label: tc('admin'), color: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300' },
+    staff: { label: tc('staff'), color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300' },
+    agent: { label: tc('agent'), color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' },
+  }
 
   const lastSAId = getSelectedSAId()
 
@@ -48,12 +51,12 @@ export default function SelectSAPage() {
         const sas = res.service_accounts ?? []
         setAccounts(sas)
         setServiceAccounts(sas)
-        if (sas.length === 0) setError('No service accounts available.')
+        if (sas.length === 0) setError(t('noAccounts'))
         if (sas.length === 1 && res.auto_selected) {
           handleSelect(sas[0])
         }
       })
-      .catch(() => setError('Failed to load service accounts.'))
+      .catch(() => setError(t('loadFailed')))
       .finally(() => setLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -68,10 +71,10 @@ export default function SelectSAPage() {
       <div className="w-full max-w-2xl">
         <div className="text-center mb-10">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            Select Account
+            {t('title')}
           </h1>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {user?.name ? `Welcome back, ${user.name}. ` : ''}Choose a service account to continue.
+            {t('welcome', { name: user?.name ?? '' })}
           </p>
         </div>
 
@@ -106,7 +109,7 @@ export default function SelectSAPage() {
                 >
                   {isLast && (
                     <span className="absolute -top-2.5 right-3 text-[11px] font-medium px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300">
-                      Last used
+                      {t('lastUsed')}
                     </span>
                   )}
                   <div className="font-semibold text-gray-800 dark:text-gray-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">

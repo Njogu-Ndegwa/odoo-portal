@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Pencil, Trash2 /*, MoreHorizontal */ } from 'lucide-react'
 import FeedbackModal from '@/components/feedback-modal'
 import { useAlert } from '@/app/contexts/alertContext'
@@ -12,6 +13,9 @@ interface ActionProps {
 }
 
 function OrderActions({ row, onDelete }: ActionProps) {
+  const t = useTranslations('portal.orders')
+  const tc = useTranslations('common')
+  const tm = useTranslations('modal')
   const router = useRouter()
   const { alert } = useAlert()
   const [dangerModalOpen, setDangerModalOpen] = useState(false)
@@ -33,10 +37,10 @@ function OrderActions({ row, onDelete }: ActionProps) {
     try {
       // TODO: replace with actual DELETE_ORDER mutation when available
       setDangerModalOpen(false)
-      alert({ text: `${orderName} deleted successfully`, type: 'success' })
+      alert({ text: t('deletedSuccess', { name: orderName }), type: 'success' })
       onDelete?.()
     } catch (err) {
-      alert({ text: err instanceof Error ? err.message : 'Failed to delete order', type: 'error' })
+      alert({ text: err instanceof Error ? err.message : t('deleteOrderFailed'), type: 'error' })
       setDangerModalOpen(false)
     }
   }
@@ -51,19 +55,19 @@ function OrderActions({ row, onDelete }: ActionProps) {
         className={`p-2 rounded-full transition-colors ${canEdit ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'opacity-30 cursor-not-allowed'}`}
         onClick={canEdit ? handleEdit : undefined}
         disabled={!canEdit}
-        title={canEdit ? 'Edit order' : 'Only draft and sent orders can be edited'}
+        title={canEdit ? t('editOrder') : t('onlyDraftSentEdit')}
       >
         <Pencil className="w-4 h-4 text-gray-500" />
-        <span className="sr-only">Edit</span>
+        <span className="sr-only">{tc('edit')}</span>
       </button>
       <button
         className={`p-2 rounded-full transition-colors ${canDelete ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'opacity-30 cursor-not-allowed'}`}
         onClick={canDelete ? handleDelete : undefined}
         disabled={!canDelete}
-        title={canDelete ? 'Delete order' : 'Only draft orders can be deleted'}
+        title={canDelete ? tc('delete') : t('onlyDraftDelete')}
       >
         <Trash2 className={`w-4 h-4 ${canDelete ? 'text-red-500' : 'text-gray-500'}`} />
-        <span className="sr-only">Delete</span>
+        <span className="sr-only">{tc('delete')}</span>
       </button>
       {/* <button
         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -77,9 +81,9 @@ function OrderActions({ row, onDelete }: ActionProps) {
         isOpen={dangerModalOpen}
         setIsOpen={setDangerModalOpen}
         variant="danger"
-        title={`Delete ${orderName}?`}
-        content="Are you sure you want to delete this order? This action cannot be undone."
-        confirmButtonLabel="Yes, Delete it"
+        title={`${tc('delete')} ${orderName}?`}
+        content={t('deleteOrderConfirm')}
+        confirmButtonLabel={tm('yesDelete')}
         onConfirm={handleConfirmDelete}
       />
     </div>
