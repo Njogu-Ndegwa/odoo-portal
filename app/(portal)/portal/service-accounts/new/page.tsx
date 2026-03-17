@@ -1,16 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Users } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useApolloClient } from '@apollo/client'
 import { useSA } from '@/lib/sa-context'
 import { createServiceAccount } from '@/lib/sa-api'
+import { CUSTOMERS_QUERY } from '@/lib/portal/queries'
+import type { CustomersListResponse, CustomersFilterInput, CustomerEntity } from '@/lib/portal/types'
 import type { SAAccountClass, SAState } from '@/lib/sa-types'
+import ComboboxSearch from '@/components/combobox-search'
 import { useAlert } from '@/app/contexts/alertContext'
+
+interface PartnerOption {
+  id: number
+  name: string
+  email: string | null
+  phone: string | null
+}
+
+function mapCustomerToPartner(c: CustomerEntity): PartnerOption {
+  return { id: Number(c.id), name: c.name, email: c.email, phone: c.phone }
+}
+
+const DROPDOWN_PAGE_SIZE = 20
 
 export default function ServiceAccountCreatePage() {
   const router = useRouter()
+  const apolloClient = useApolloClient()
   const { currentSA } = useSA()
   const { alert } = useAlert()
 
@@ -25,14 +44,85 @@ export default function ServiceAccountCreatePage() {
     account_class: 'EXTC' as SAAccountClass,
     account_code: '',
     parent_id: '',
-    partner_id: '',
     state: 'active' as SAState,
   })
+
+  // Partner (customer) search state
+  const [selectedPartner, setSelectedPartner] = useState<PartnerOption | null>(null)
+  const [partnerSearch, setPartnerSearch] = useState('')
+  const [debouncedPartnerSearch, setDebouncedPartnerSearch] = useState('')
+  const [partnerPage, setPartnerPage] = useState(1)
+  const [accumulatedPartners, setAccumulatedPartners] = useState<PartnerOption[]>([])
+  const [partnersLoading, setPartnersLoading] = useState(false)
+  const [partnerHasMore, setPartnerHasMore] = useState(false)
+  const [partnerDropdownOpen, setPartnerDropdownOpen] = useState(false)
+  const prevPartnerSearchRef = useRef(debouncedPartnerSearch)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
   }
+
+  // Partner search: debounce
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedPartnerSearch(partnerSearch), 300)
+    return () => clearTimeout(timer)
+  }, [partnerSearch])
+
+  useEffect(() => {
+    if (prevPartnerSearchRef.current !== debouncedPartnerSearch) {
+      setPartnerPage(1)
+      setAccumulatedPartners([])
+      prevPartnerSearchRef.current = debouncedPartnerSearch
+    }
+  }, [debouncedPartnerSearch])
+
+  const handlePartnerOpenChange = useCallback((open: boolean) => {
+    setPartnerDropdownOpen(open)
+    if (!open) {
+      setPartnerPage(1)
+      setAccumulatedPartners([])
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!partnerDropdownOpen) return
+    let cancelled = false
+    const fetchData = async () => {
+      setPartnersLoading(true)
+      try {
+        const filters: CustomersFilterInput = {
+          page: partnerPage,
+          limit: DROPDOWN_PAGE_SIZE,
+        }
+        if (debouncedPartnerSearch.trim()) {
+          filters.search = debouncedPartnerSearch.trim()
+        }
+        const { data } = await apolloClient.query<CustomersListResponse>({
+          query: CUSTOMERS_QUERY,
+          variables: { filters },
+          fetchPolicy: 'network-only',
+        })
+        if (cancelled) return
+        const mapped = data.customers.data.map(mapCustomerToPartner)
+        setAccumulatedPartners((prev) => partnerPage === 1 ? mapped : [...prev, ...mapped])
+        setPartnerHasMore(data.customers.pagination.hasNextPage)
+      } catch {
+        if (!cancelled) setPartnerHasMore(false)
+      } finally {
+        if (!cancelled) setPartnersLoading(false)
+      }
+    }
+    fetchData()
+    return () => { cancelled = true }
+  }, [partnerDropdownOpen, debouncedPartnerSearch, partnerPage, apolloClient])
+
+  const handlePartnerLoadMore = useCallback(() => {
+    if (!partnersLoading && partnerHasMore) setPartnerPage((p) => p + 1)
+  }, [partnersLoading, partnerHasMore])
+
+  const partnerLoadingInitial = partnersLoading && partnerPage === 1
+  const partnerLoadingMore = partnersLoading && partnerPage > 1
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,7 +131,7 @@ export default function ServiceAccountCreatePage() {
       alert({ text: t('nameValidation'), type: 'error' })
       return
     }
-    if (!form.partner_id.trim()) {
+    if (!selectedPartner) {
       alert({ text: t('partnerValidation'), type: 'error' })
       return
     }
@@ -57,7 +147,7 @@ export default function ServiceAccountCreatePage() {
         account_class: form.account_class,
         account_code: form.account_code.trim() || undefined,
         parent_id: parentId,
-        partner_id: Number(form.partner_id),
+        partner_id: selectedPartner.id,
         state: form.state,
       })
 
@@ -126,18 +216,40 @@ export default function ServiceAccountCreatePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1" htmlFor="partner_id">
+                <label className="block text-sm font-medium mb-1">
                   {t('partnerIdRequired')}
                 </label>
-                <input
-                  id="partner_id"
-                  name="partner_id"
-                  className="form-input w-full"
-                  type="number"
-                  value={form.partner_id}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g. 11360"
+                <ComboboxSearch<PartnerOption>
+                  className="w-full"
+                  triggerLabel={selectedPartner ? selectedPartner.name : t('selectPartner')}
+                  triggerIcon={<Users className="w-4 h-4 shrink-0 text-gray-400 dark:text-gray-500" />}
+                  triggerClassName="form-input w-full text-left flex items-center gap-2 cursor-pointer [&>span]:flex-1 [&>span]:truncate [&>span]:min-w-0 [&>svg:last-child]:ml-auto [&>svg:last-child]:shrink-0"
+                  searchPlaceholder={t('searchPartnerPlaceholder')}
+                  value={partnerSearch}
+                  onChange={setPartnerSearch}
+                  items={accumulatedPartners}
+                  isLoading={partnerLoadingInitial}
+                  emptyMessage={tc('noResultsFound')}
+                  onSelect={(p) => setSelectedPartner(p)}
+                  onOpenChange={handlePartnerOpenChange}
+                  align="left"
+                  dropdownClassName="w-full"
+                  renderItem={(p: PartnerOption) => (
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{p.name}</span>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {p.email || t('noEmail')}
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+                        ID: {p.id}
+                      </span>
+                    </div>
+                  )}
+                  onLoadMore={handlePartnerLoadMore}
+                  hasMore={partnerHasMore}
+                  isLoadingMore={partnerLoadingMore}
                 />
               </div>
               <div>
